@@ -12,6 +12,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -75,8 +76,7 @@ public class SettingActivity  extends AppCompatActivity {
     SharedPreferences settingsPreferences;
 
     CheckBox checkBox;
-    ListView lv_categories;
-    ListView lv_areas;
+
     Button btnSave, btnCancel;
     RadioButton radioButton, radioButton1, radioButton2;
     ArrayList<Boolean> checkIsChanged;
@@ -92,7 +92,8 @@ public class SettingActivity  extends AppCompatActivity {
 
     RequestQueue queue;
     String areasIds, categoriesIds;
-    private RecyclerView brandRecyclerView;
+    private RecyclerView categoriesRecyclerView;
+    private RecyclerView areasRecyclerView;
 
 
     @Override
@@ -102,8 +103,6 @@ public class SettingActivity  extends AppCompatActivity {
         getSupportActionBar().setTitle("Datalabs");
         settingsPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         checkBox = findViewById(R.id.chbox_category);
-//        lv_categories = findViewById(R.id.lv_categories);
-        lv_areas = findViewById(R.id.lv_areas);
 
         btnSave = findViewById(R.id.btn_save);
         btnCancel = findViewById(R.id.btn_cancel);
@@ -154,22 +153,22 @@ public class SettingActivity  extends AppCompatActivity {
                 System.out.println(categories.get(i).getTitle() + "checkBoxAdapter");
             }
 
-            brandRecyclerView = (RecyclerView) findViewById(R.id.lv_categories);
+            categoriesRecyclerView = findViewById(R.id.lv_categories);
 
             //RecyclerView layout manager
             LinearLayoutManager recyclerLayoutManager = new LinearLayoutManager(this);
-            brandRecyclerView.setLayoutManager(recyclerLayoutManager);
+            categoriesRecyclerView.setLayoutManager(recyclerLayoutManager);
 
             //RecyclerView item decorator
             DividerItemDecoration dividerItemDecoration =
-                    new DividerItemDecoration(brandRecyclerView.getContext(),
+                    new DividerItemDecoration(categoriesRecyclerView.getContext(),
                             recyclerLayoutManager.getOrientation());
-            brandRecyclerView.addItemDecoration(dividerItemDecoration);
+            categoriesRecyclerView.addItemDecoration(dividerItemDecoration);
 
             //RecyclerView adapater
             CheckRecycleAdapter recyclerViewAdapter = new
                     CheckRecycleAdapter(categories,this);
-            brandRecyclerView.setAdapter(recyclerViewAdapter);
+            categoriesRecyclerView.setAdapter(recyclerViewAdapter);
         }
 
 
@@ -182,18 +181,28 @@ public class SettingActivity  extends AppCompatActivity {
                 areas.add(area);
                 System.out.println(areas.get(i).getTitle() + "checkBoxAdapter");
             }
-            CheckBoxAreaAdapter checkBoxAreaAdapter = new CheckBoxAreaAdapter(getApplicationContext(), areas);
+            areasRecyclerView =findViewById(R.id.lv_areas);
 
-            lv_areas.setAdapter(checkBoxAreaAdapter);
+            //RecyclerView layout manager
+            LinearLayoutManager recyclerLayoutManager = new LinearLayoutManager(this);
+            areasRecyclerView.setLayoutManager(recyclerLayoutManager);
 
+            //RecyclerView item decorator
+            DividerItemDecoration dividerItemDecoration =
+                    new DividerItemDecoration(areasRecyclerView.getContext(),
+                            recyclerLayoutManager.getOrientation());
+            areasRecyclerView.addItemDecoration(dividerItemDecoration);
 
-            checkBoxAreaAdapter.notifyDataSetChanged();
+            //RecyclerView adapater
+            CheckAreaRecycleAdapter recyclerViewAdapter = new
+                    CheckAreaRecycleAdapter(areas,this);
+            areasRecyclerView.setAdapter(recyclerViewAdapter);
 
         }
 
-        if (settingsPreferences.getLong("interval", 0) == 6000) {
+        if (settingsPreferences.getLong("interval", 0) == 86400000) {
             radioButton.setChecked(true);
-        } else if (settingsPreferences.getLong("interval", 0) == 18000) {
+        } else if (settingsPreferences.getLong("interval", 0) == 302400000) {
             radioButton1.setChecked(true);
         } else {
             radioButton2.setChecked(true);
@@ -218,6 +227,7 @@ public class SettingActivity  extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.menu_refresh) {
+
             RefreshOperation();
 
         }
@@ -227,59 +237,83 @@ public class SettingActivity  extends AppCompatActivity {
 
     public void RefreshOperation() {
 
-        queue.add(volleyUpdateDefault());
+        if(isConn()) {
+            queue.add(volleyUpdateDefault());
+        }else {
+            Toast.makeText(SettingActivity.this,"Πρέπει να είστε συνδεδεμένος στο ίντερνετ για να κάνετε ανανέωση!",Toast.LENGTH_LONG).show();
+        }
     }
 
 
     public void btnSaveClicked(View view) throws ExecutionException, InterruptedException {
 
+
         CheckBox checkBox;
+        ArrayList<String> categoriesNames = new ArrayList<>();
         offerCategories = new ArrayList<>();
+        ArrayList<String> areasNames = new ArrayList<>();
         offerAreas = new ArrayList<>();
 
         OfferCategory offerCategory;
         OfferArea offerArea;
         areasIds = "";
-        categoriesIds ="";
+        categoriesIds = "";
+        if (isConn()) {
 
-        if(isConn()) {
+            for (int i = 0; i < categoriesRecyclerView.getChildCount(); i++) {
+                checkBox = categoriesRecyclerView.getChildAt(i).findViewById(R.id.chbox_category);
+                if (checkBox.isChecked()) {
+                    categoriesNames.add(checkBox.getText().toString());
+                }
+            }
 
-            for (int i = 0; i < lv_categories.getChildCount(); i++) {
-                checkBox = lv_categories.getChildAt(i).findViewById(R.id.chbox_category);
-                offerCategory = (OfferCategory) lv_categories.getAdapter().getItem(i);
-                if (checkBox.isChecked() && !offerCategories.contains(offerCategory)) {
-
-                    offerCategories.add(offerCategory);
+            for (int j = 0; j < settingsPreferences.getInt("numberOfCategories", 0); j++) {
+                for (String name : categoriesNames) {
+                    if (name.equals(settingsPreferences.getString("offerCategoryTitle " + j, ""))) {
+                        offerCategory = new OfferCategory();
+                        offerCategory.setCatid(settingsPreferences.getInt("offerCategoryId " + j, 0));
+                        offerCategory.setTitle(settingsPreferences.getString("offerCategoryTitle " + j, ""));
+                        offerCategories.add(offerCategory);
+                    }
                 }
             }
 
 
-            for (int i = 0; i < lv_areas.getChildCount(); i++) {
-                checkBox = lv_areas.getChildAt(i).findViewById(R.id.chbox_category);
-                offerArea = (OfferArea) lv_areas.getAdapter().getItem(i);
-                if (checkBox.isChecked() && !offerAreas.contains(offerArea)) {
+            for (int i = 0; i < areasRecyclerView.getChildCount(); i++) {
+                checkBox = areasRecyclerView.getChildAt(i).findViewById(R.id.chbox_category);
+                if (checkBox.isChecked()) {
+                    areasNames.add(checkBox.getText().toString());
+                }
+            }
 
-                    offerAreas.add(offerArea);
+            for (int j = 0; j < settingsPreferences.getInt("numberOfAreas", 0); j++) {
+                for (String name : areasNames) {
+                    if (name.equals(settingsPreferences.getString("offerAreaTitle " + j, ""))) {
+                        offerArea = new OfferArea();
+                        offerArea.setAreaid(settingsPreferences.getInt("offerAreaId " + j, 0));
+                        offerArea.setTitle(settingsPreferences.getString("offerAreaTitle " + j, ""));
+                        offerAreas.add(offerArea);
+                    }
                 }
             }
 
             System.out.println(offerCategories.size());
-            if(!offerCategories.isEmpty() && !offerAreas.isEmpty()) {
+            if (!offerCategories.isEmpty() && !offerAreas.isEmpty()) {
                 cancel();
 
                 if (radioButton.isChecked()) {
-                    if (!(settingsPreferences.getLong("interval", 0) == 6000)) {
-                        settingsPreferences.edit().putLong("interval", 6000).apply();
+                    if (!(settingsPreferences.getLong("interval", 0) == 86400000)) {
+                        settingsPreferences.edit().putLong("interval", 86400000).apply();
 
                     }
                 } else if (radioButton1.isChecked()) {
-                    if (!(settingsPreferences.getLong("interval", 0) == 18000)) {
-                        settingsPreferences.edit().putLong("interval", 18000).apply();
+                    if (!(settingsPreferences.getLong("interval", 0) == 302400000)) {
+                        settingsPreferences.edit().putLong("interval", 302400000).apply();
 
                     }
                 } else {
-                    if (!(settingsPreferences.getLong("interval", 0) == 30000)) {
-                        settingsPreferences.edit().putLong("interval", 30000).apply();
+                    if (!(settingsPreferences.getLong("interval", 0) == 604800000)) {
+                        settingsPreferences.edit().putLong("interval", 604800000).apply();
 
                     }
                 }
@@ -288,44 +322,38 @@ public class SettingActivity  extends AppCompatActivity {
 
                 start();
 
-                int r =0;
                 for (OfferCategory oc : offerCategories) {
                     if (categoriesIds.equals("")) {
                         categoriesIds += oc.getCatid();
-                        r++;
                     } else {
-                        categoriesIds +=  "," +oc.getCatid();
-                        r++;
+                        categoriesIds += "," + oc.getCatid();
                     }
 
                 }
                 System.out.println(categoriesIds);
-                int x = 0;
+
                 for (OfferArea oa : offerAreas) {
                     if (areasIds.equals("")) {
                         areasIds += oa.getAreaid();
-                        x++;
                     } else {
-                        areasIds +=  "," +oa.getAreaid();
-                        x++;
+                        areasIds += "," + oa.getAreaid();
                     }
 
                 }
 
                 System.out.println(categoriesIds);
                 System.out.println(areasIds);
-                volleySaveOffers(categoriesIds,areasIds);
+                volleySaveOffers(categoriesIds, areasIds);
 
 
-            }else if(offerCategories.isEmpty()){
+            } else if (offerCategories.isEmpty()) {
                 Toast.makeText(MyApplication.getAppContext(), "Πρέπει να επιλέξετε τουλάχιστον μία κατηγορία!", Toast.LENGTH_LONG).show();
-            }else if(offerAreas.isEmpty()){
+            } else if (offerAreas.isEmpty()) {
                 Toast.makeText(MyApplication.getAppContext(), "Πρέπει να επιλέξετε τουλάχιστον μία περιοχή!", Toast.LENGTH_LONG).show();
             }
 
 
-
-        }else  {
+        } else {
             Toast.makeText(SettingActivity.this, "Πρέπει να είστε συνδεδεμένος για να γίνει αποθήκευση των επιλογών σας!", Toast.LENGTH_LONG).show();
         }
 
@@ -342,7 +370,7 @@ public class SettingActivity  extends AppCompatActivity {
             cancel();
 
             volleySetDefault();
-            settingsPreferences.edit().putLong("interval", 6000).apply();
+            settingsPreferences.edit().putLong("interval", 86400000).apply();
             start();
         } else {
             Toast.makeText(SettingActivity.this, "Πρέπει να είστε συνδεδεμένος για να γίνει επαναφορά των επιλογών σας!", Toast.LENGTH_LONG).show();
@@ -368,14 +396,14 @@ public class SettingActivity  extends AppCompatActivity {
         pendingIntentA = PendingIntent.getBroadcast(SettingActivity.this, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         manager.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), settingsPreferences.getLong("interval", 0), pendingIntentA);
 
-        Toast.makeText(this, "Alarm Set", Toast.LENGTH_SHORT).show();
+
     }
 
     public void cancel() {
         Intent alarmIntent = new Intent(SettingActivity.this, AlarmReceiver.class);
         AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         manager.cancel(PendingIntent.getBroadcast(SettingActivity.this, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT));
-        Toast.makeText(this, "Alarm Canceled", Toast.LENGTH_SHORT).show();
+
     }
 
     @Override
@@ -424,11 +452,21 @@ public class SettingActivity  extends AppCompatActivity {
                                     System.out.println(categoriesRefresh.get(i).getTitle() + "checkBoxAdapter");
                                 }
 
-                                CheckBoxAdapter checkBoxAdapter = new CheckBoxAdapter(getApplicationContext(), categoriesRefresh);
-                                lv_categories.setAdapter(checkBoxAdapter);
+                                //RecyclerView layout manager
+                                LinearLayoutManager recyclerLayoutManager = new LinearLayoutManager(SettingActivity.this);
+                                categoriesRecyclerView.setLayoutManager(recyclerLayoutManager);
 
+                                //RecyclerView item decorator
+                                DividerItemDecoration dividerItemDecoration =
+                                        new DividerItemDecoration(categoriesRecyclerView.getContext(),
+                                                recyclerLayoutManager.getOrientation());
+                                categoriesRecyclerView.addItemDecoration(dividerItemDecoration);
 
-                                checkBoxAdapter.notifyDataSetChanged();
+                                //RecyclerView adapater
+                                CheckRecycleAdapter recyclerViewAdapter = new
+                                        CheckRecycleAdapter(categoriesRefresh,SettingActivity.this);
+                                categoriesRecyclerView.setAdapter(recyclerViewAdapter);
+
                                 queue.add(volleyUpdateDefaultAreas());
 
                             }
@@ -510,11 +548,21 @@ public class SettingActivity  extends AppCompatActivity {
                                     System.out.println(areasRefresh.get(i).getTitle() + "checkBoxAdapter");
                                 }
 
-                                CheckBoxAreaAdapter checkBoxAdapter = new CheckBoxAreaAdapter(getApplicationContext(), areasRefresh);
-                                lv_areas.setAdapter(checkBoxAdapter);
+                                //RecyclerView layout manager
+                                LinearLayoutManager recyclerLayoutManager = new LinearLayoutManager(SettingActivity.this);
+                                areasRecyclerView.setLayoutManager(recyclerLayoutManager);
 
+                                //RecyclerView item decorator
+                                DividerItemDecoration dividerItemDecoration =
+                                        new DividerItemDecoration(areasRecyclerView.getContext(),
+                                                recyclerLayoutManager.getOrientation());
+                                areasRecyclerView.addItemDecoration(dividerItemDecoration);
 
-                                checkBoxAdapter.notifyDataSetChanged();
+                                //RecyclerView adapater
+                                CheckAreaRecycleAdapter recyclerViewAdapter = new
+                                        CheckAreaRecycleAdapter(areasRefresh,SettingActivity.this);
+                                areasRecyclerView.setAdapter(recyclerViewAdapter);
+
 
                             }
                         } catch (JSONException e) {
@@ -703,8 +751,10 @@ public class SettingActivity  extends AppCompatActivity {
                             settingsPreferences.edit().putInt("numberOfOffers", 0).apply();
                         }
 
-                        Intent intent = new Intent(SettingActivity.this, MainActivity.class);
+                        Intent intent = new Intent(SettingActivity.this,MainActivity.class);
                         startActivity(intent);
+
+
 
 
                     }
@@ -753,6 +803,7 @@ public class SettingActivity  extends AppCompatActivity {
             }
         };
         Volley.newRequestQueue(MyApplication.getAppContext()).add(stringRequest);
+
     }
 
 

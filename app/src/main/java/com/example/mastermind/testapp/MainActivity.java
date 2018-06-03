@@ -111,7 +111,7 @@ public class MainActivity extends AppCompatActivity  {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        getSupportActionBar().setTitle("Datalabs");
+        getSupportActionBar().setTitle("BeeMyJob");
         lv = findViewById(R.id.listView);
         asyncOffers = new ArrayList<>();
         offers = new ArrayList<>();
@@ -211,39 +211,55 @@ public class MainActivity extends AppCompatActivity  {
     public void RefreshOperation() {
 
 
-        categoriesIds="";
-        areaIds = "";
+        if(isConn()) {
+            categoriesIds = "";
+            areaIds = "";
 
-        if(queue == null) {
-            queue = Volley.newRequestQueue(this);
-        }
-
-        for (int v = 0; v < (settingsPreferences.getInt("numberOfCheckedCategories", 0)); v++) {
-            if (v < settingsPreferences.getInt("numberOfCheckedCategories", 0) - 1) {
-                categoriesIds += settingsPreferences.getInt("checkedCategoryId " + v, 0) + ",";
-            } else
-                categoriesIds += settingsPreferences.getInt("checkedCategoryId " + v, 0);
-        }
-        for (int v = 0; v < (settingsPreferences.getInt("numberOfCheckedAreas", 0)); v++) {
-            if (v < settingsPreferences.getInt("numberOfCheckedAreas", 0) - 1) {
-                areaIds += settingsPreferences.getInt("checkedAreaId " + v, 0) + ",";
-            } else
-                areaIds += settingsPreferences.getInt("checkedAreaId " + v, 0);
-        }
-
-
-        queue.add(volleySetCheckedCategories(categoriesIds,areaIds));
-
-        if(settingsPreferences.getInt("numberOfImages",0)>0) {
-            paths = new String[settingsPreferences.getInt("numberOfImages", 0)];
-
-            for (int i = 1; i <= paths.length; i++) {
-                paths[i - 1] = settingsPreferences.getString("imageUri" + i, "");
+            if (queue == null) {
+                queue = Volley.newRequestQueue(this);
             }
-            loadImageFromStorage(paths);
+
+            for (int v = 0; v < (settingsPreferences.getInt("numberOfCheckedCategories", 0)); v++) {
+                if (v < settingsPreferences.getInt("numberOfCheckedCategories", 0) - 1) {
+                    categoriesIds += settingsPreferences.getInt("checkedCategoryId " + v, 0) + ",";
+                } else
+                    categoriesIds += settingsPreferences.getInt("checkedCategoryId " + v, 0);
+            }
+            for (int v = 0; v < (settingsPreferences.getInt("numberOfCheckedAreas", 0)); v++) {
+                if (v < settingsPreferences.getInt("numberOfCheckedAreas", 0) - 1) {
+                    areaIds += settingsPreferences.getInt("checkedAreaId " + v, 0) + ",";
+                } else
+                    areaIds += settingsPreferences.getInt("checkedAreaId " + v, 0);
+            }
+
+
+            queue.add(volleySetCheckedCategories(categoriesIds, areaIds));
+
+            if (settingsPreferences.getInt("numberOfImages", 0) > 0) {
+                paths = new String[settingsPreferences.getInt("numberOfImages", 0)];
+
+                for (int i = 1; i <= paths.length; i++) {
+                    paths[i - 1] = settingsPreferences.getString("imageUri" + i, "");
+                }
+                loadImageFromStorage(paths);
+            }
+
+        }else{
+            Toast.makeText(MainActivity.this,"Πρέπει να είστε συνδεδεμένος στο ίντερνετ για να κάνετε ανανέωση!",Toast.LENGTH_LONG).show();
         }
 
 
+    }
+
+    public boolean isConn() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+        boolean isWifiConn = networkInfo.isConnected();
+        networkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+        boolean isMobileConn = networkInfo.isConnected();
+        Log.d("connection", "Wifi connected: " + isWifiConn);
+        Log.d("connection", "Mobile connected: " + isMobileConn);
+        return isWifiConn || isMobileConn;
     }
 
 

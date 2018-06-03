@@ -65,6 +65,10 @@ public class CheckRecycleAdapter extends
         return filterList.size();
     }
 
+    public OfferCategory getOffer(int i){
+        return filterList.get(i);
+    }
+
     public CheckBox getCheckBox(ViewHolder holder){
         return holder.checkBox;
 

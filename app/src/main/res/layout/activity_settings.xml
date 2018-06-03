@@ -26,7 +26,7 @@
         <android.support.v7.widget.RecyclerView
             android:id="@+id/lv_categories"
             android:layout_width="match_parent"
-            android:layout_height="200dp" />
+            android:layout_height="150dp" />
 
         <TextView
             android:id="@+id/txtv_areas"
@@ -38,10 +38,10 @@
             android:textSize="24sp" />
 
 
-        <ListView
+        <android.support.v7.widget.RecyclerView
             android:id="@+id/lv_areas"
             android:layout_width="match_parent"
-            android:layout_height="200dp" />
+            android:layout_height="150dp" />
 
 
         <TextView

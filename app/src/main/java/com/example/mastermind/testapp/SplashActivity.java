@@ -122,6 +122,8 @@ public class SplashActivity extends AppCompatActivity {
 
         System.out.println(settingsPreferences.getBoolean("checkIsChanged", false));
 
+        start();
+
         new Handler().postDelayed(new Runnable(){
             @Override
             public void run() {
@@ -131,11 +133,17 @@ public class SplashActivity extends AppCompatActivity {
                     System.out.println(settingsPreferences.getLong("interval",0));
                     start();
 
-
                     volleySetDefault();
 
                 } else if (settingsPreferences.getInt("numberOfCategories", 0) == 0 && settingsPreferences.getInt("numberOfAreas", 0) == 0 && !isConn()) {
+
                     Toast.makeText(SplashActivity.this, "Πρέπει να είστε συνδεδεμένος την πρώτη φορά!", Toast.LENGTH_LONG).show();
+
+                    settingsPreferences.edit().putLong("interval", 6000).apply();
+                    settingsPreferences.edit().putBoolean("makeRequest",false).apply();
+                    System.out.println(settingsPreferences.getLong("interval",0));
+                    start();
+
                     Intent intent = new Intent(SplashActivity.this,MainActivity.class);
                     startActivity(intent);
                 } else {
@@ -143,7 +151,7 @@ public class SplashActivity extends AppCompatActivity {
                     startActivity(intent);
                 }
             }
-        },1000 );
+        },2000 );
 
 
 
@@ -170,7 +178,6 @@ public class SplashActivity extends AppCompatActivity {
         pendingIntentA = PendingIntent.getBroadcast(SplashActivity.this, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         manager.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(),settingsPreferences.getLong("interval",0), pendingIntentA);
 
-        Toast.makeText(this, "Alarm Set", Toast.LENGTH_SHORT).show();
     }
 
     public void volleySetDefault(){
@@ -392,7 +399,7 @@ public class SplashActivity extends AppCompatActivity {
                 }
                 System.out.println("Volley: " + message);
                 if(!message.equals("")){
-                    Toast.makeText(SplashActivity.this,Utils.getServerError()+ "this is the offers",Toast.LENGTH_LONG).show();
+                    Toast.makeText(SplashActivity.this,Utils.getServerError(),Toast.LENGTH_LONG).show();
                     Intent intentError = new Intent(SplashActivity.this,MainActivity.class);
                     startActivity(intentError);
                 }
@@ -521,7 +528,6 @@ public class SplashActivity extends AppCompatActivity {
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
-                        int numberOfImages=0;
                         ArrayList<Bitmap> myBitmaps = new ArrayList<>();
 
 
@@ -534,15 +540,12 @@ public class SplashActivity extends AppCompatActivity {
                         try {
                             JSONObject jsonObjectAll = new JSONObject(response);
                             JSONArray jsonArray = jsonObjectAll.getJSONArray("images");
-                            numberOfImages = jsonArray.length();
+
                             String[] imageNames = new String[jsonArray.length()];
                             for(int i=0;i<jsonArray.length();i++) {
 
-
                                 JSONObject jsonObjectCategory = jsonArray.getJSONObject(i);
                                 imageNames[i] = jsonObjectCategory.getString("image_title");
-
-
 
                             }
                             if(jsonArray.length()>0) {

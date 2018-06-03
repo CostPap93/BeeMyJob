@@ -2,10 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://C:\AndroidApps\TestAppConnected-Alert-master10\TestAppConnected-Alert-master.iml" filepath="C:\AndroidApps\TestAppConnected-Alert-master10\TestAppConnected-Alert-master.iml" />
       <module fileurl="file://$PROJECT_DIR$/TestAppConnected-Alert-master10.iml" filepath="$PROJECT_DIR$/TestAppConnected-Alert-master10.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://C:\AndroidApps\TestAppConnected-Alert-master10\app\app.iml" filepath="C:\AndroidApps\TestAppConnected-Alert-master10\app\app.iml" />
     </modules>
   </component>
 </project>

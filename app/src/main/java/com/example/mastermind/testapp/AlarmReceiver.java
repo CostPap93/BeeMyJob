@@ -173,7 +173,7 @@ public class AlarmReceiver extends BroadcastReceiver {
             System.out.println(settingsPreferences.getInt("numberOfOffers", 0));
             System.out.println(settingsPreferences.getInt("numberOfCheckedCategories", 0));
             System.out.println(settingsPreferences.getLong("offerDate " + i,0) > settingsPreferences.getLong("lastSeenDate", 0));
-            if (settingsPreferences.getLong("offerDate " + i,0) > settingsPreferences.getLong("lastSeenDate", 0)) {
+            if (settingsPreferences.getLong("offerDate " + i,0) >settingsPreferences.getLong("lastSeenDate", 0)) {
                 for(int j = 0; j < settingsPreferences.getInt("numberOfCheckedCategories", 0); j++) {
                     for (int k = 0; k < settingsPreferences.getInt("numberOfCheckedAreas", 0); k++) {
                         System.out.println(settingsPreferences.getInt("offerCatid " + i, 0));
@@ -396,7 +396,6 @@ public class AlarmReceiver extends BroadcastReceiver {
             @Override
             public void onBubbleClick(BubbleLayout bubble) {
 
-                Toast.makeText(MyApplication.getAppContext(), "Clicked", Toast.LENGTH_SHORT).show();
                 Intent intentBubbleToMain = new Intent(MyApplication.getAppContext(), UnseenActivity.class);
                 intentBubbleToMain.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 intentBubbleToMain.putExtra("source", "alarm");
@@ -499,7 +498,7 @@ public class AlarmReceiver extends BroadcastReceiver {
                 }
                 System.out.println("Volley: " + message);
                 if (!message.equals("")) {
-                    Toast.makeText(MyApplication.getAppContext(), "There is some problem with the server (" + message + ")", Toast.LENGTH_LONG).show();
+                    Toast.makeText(MyApplication.getAppContext(), Utils.getServerError(), Toast.LENGTH_LONG).show();
                     Intent intentError = new Intent(MyApplication.getAppContext(), MainActivity.class);
                     MyApplication.getAppContext().startActivity(intentError);
                 }

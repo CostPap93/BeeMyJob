@@ -81,7 +81,8 @@ public class UnseenActivity  extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        getSupportActionBar().setTitle("Datalabs");
+        getSupportActionBar().setTitle("BeeMyJob");
+
         lv = findViewById(R.id.listView);
         asyncOffers = new ArrayList<>();
         offers = new ArrayList<>();

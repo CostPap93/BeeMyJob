@@ -1,8 +1,10 @@
 package com.example.mastermind.testapp;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
@@ -24,6 +26,8 @@ import java.util.Random;
 
 public class DetailActivity extends AppCompatActivity {
 
+    JobOffer jobOffer;
+
     SimpleDateFormat format;
     SharedPreferences settingsPreferences;
     String[] paths;
@@ -33,7 +37,7 @@ public class DetailActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
-        getSupportActionBar().setTitle("Datalabs");
+        getSupportActionBar().setTitle("BeeMyJob");
 
         settingsPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -44,13 +48,21 @@ public class DetailActivity extends AppCompatActivity {
         TextView txt_link = findViewById(R.id.txt_link);
         format = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
 
-        JobOffer jobOffer = (JobOffer) getIntent().getSerializableExtra("jobOffer");
+        jobOffer = (JobOffer) getIntent().getSerializableExtra("jobOffer");
 
 
         txt_title.setText(jobOffer.getTitle());
         txt_date.setText("Δημοσιεύτηκε: " +format.format(jobOffer.getDate()));
-        txt_description.setText(String.valueOf(jobOffer.getDesc()));
-        txt_link.setText(String.valueOf(jobOffer.getLink()));
+        if(jobOffer.getDesc()==null){
+            txt_description.setVisibility(View.INVISIBLE);
+        }else {
+            txt_description.setText(String.valueOf(jobOffer.getDesc()));
+        }
+        if(jobOffer.getLink()==null){
+            txt_link.setVisibility(View.INVISIBLE);
+        }
+
+
 
         if (settingsPreferences.getInt("numberOfImages",0)>0) {
             paths = new String[settingsPreferences.getInt("numberOfImages", 0)];
@@ -61,6 +73,12 @@ public class DetailActivity extends AppCompatActivity {
         }
 
 
+    }
+
+    public void linkClicked(View view){
+        Uri uri = Uri.parse(String.valueOf(jobOffer.getLink()));
+        Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+        startActivity(intent);
     }
 
     private void loadImageFromStorage(String[] paths)

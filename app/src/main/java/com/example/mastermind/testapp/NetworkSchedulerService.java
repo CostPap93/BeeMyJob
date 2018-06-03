@@ -137,7 +137,6 @@ public class NetworkSchedulerService extends JobService implements
     public void onNetworkConnectionChanged(boolean isConnected) {
 
         String message = isConnected ? "Good! Connected to Internet" : "Sorry! Not connected to internet";
-        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
 
         notCount = 0;
         categoriesIds ="";
@@ -146,9 +145,7 @@ public class NetworkSchedulerService extends JobService implements
         if(queue == null) {
             queue = Volley.newRequestQueue(MyApplication.getAppContext());
         }
-        //            if(Build.VERSION.SDK_INT>=23) {
 
-//            }
         if(isConnected && settingsPreferences.getBoolean("makeRequest",true)) {
             initializeBubblesManager();
             for (int v = 0; v < (settingsPreferences.getInt("numberOfCheckedCategories", 0)); v++) {
@@ -299,9 +296,9 @@ public class NetworkSchedulerService extends JobService implements
 
                             if (checkForOffers() > 0 && asyncOffers.get(0).getDate().getTime() > settingsPreferences.getLong("lastNotDate", 0)) {
 
-//                                if(Build.VERSION.SDK_INT>=23) {
+
                                     addNewBubble();
-//                                }
+
                                 settingsPreferences.edit().putInt("numberOfUnseenOffers", checkForOffers()).apply();
                                 System.out.println(settingsPreferences.getInt("numberOfUnseenOffers", 0));
 
@@ -399,7 +396,6 @@ public class NetworkSchedulerService extends JobService implements
             @Override
             public void onBubbleClick(BubbleLayout bubble) {
 
-                Toast.makeText(MyApplication.getAppContext(), "Clicked", Toast.LENGTH_SHORT).show();
                 Intent intentBubbleToMain = new Intent(MyApplication.getAppContext(), UnseenActivity.class);
                 intentBubbleToMain.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 MyApplication.getAppContext().startActivity(intentBubbleToMain);
