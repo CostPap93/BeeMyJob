@@ -1,47 +1,41 @@
 package com.example.mastermind.testapp;
 
 
-import android.app.Activity;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
-import android.app.job.JobInfo;
-import android.app.job.JobScheduler;
-import android.content.BroadcastReceiver;
-import android.content.ComponentName;
+import android.app.ActionBar;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.preference.PreferenceManager;
 
-import android.support.annotation.RequiresApi;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import android.support.design.widget.TabLayout;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentStatePagerAdapter;
+import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
+import android.support.v7.view.menu.ActionMenuItemView;
+import android.support.v7.widget.DividerItemDecoration;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import android.widget.ActionMenuView;
 import android.widget.AdapterView;
-import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 import android.widget.Toast;
+import android.support.v7.widget.Toolbar;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.NetworkError;
@@ -55,11 +49,6 @@ import com.android.volley.TimeoutError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.nex3z.notificationbadge.NotificationBadge;
-import com.squareup.picasso.Picasso;
-import com.txusballesteros.bubbles.BubbleLayout;
-import com.txusballesteros.bubbles.BubblesManager;
-import com.txusballesteros.bubbles.OnInitializedCallback;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -68,9 +57,8 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.Serializable;
-import java.net.URL;
+import java.sql.Ref;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -82,13 +70,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-import static android.provider.ContactsContract.CommonDataKinds.Website.URL;
-
-public class MainActivity extends AppCompatActivity  {
+public class MainActivity extends FragmentActivity {
     SharedPreferences settingsPreferences;
     ArrayList<JobOffer> offers;
     ArrayList<JobOffer> asyncOffers;
@@ -96,6 +79,8 @@ public class MainActivity extends AppCompatActivity  {
     ImageButton imgBtn_ad;
 
     ListView lv;
+    RecyclerView categoriesRecyclerView;
+    RecyclerView areasRecyclerView;
     DateFormat format;
     String message = "";
     RequestQueue queue;
@@ -105,89 +90,56 @@ public class MainActivity extends AppCompatActivity  {
     String[] paths;
 
 
+    private static final int NUM_PAGES = 4;
+    private ViewPager mPager;
+    private PagerAdapter mPagerAdapter;
+
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        getSupportActionBar().setTitle("BeeMyJob");
+//        getSupportActionBar().setTitle("BeeMyJob");
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setTitle("BeeMyJob");
+        toolbar.inflateMenu(R.menu.menu_main);
+        ActionMenuItemView menuItem = findViewById(R.id.menu_refresh);
+        menuItem.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                new OffersFragment().RefreshOperation();
+                new CategoriesFragment().RefreshOperation();
+                new AreasFragment().RefreshOperation();
+            }
+        });
+
+
         lv = findViewById(R.id.listView);
+        categoriesRecyclerView = findViewById(R.id.lv_categories);
+        areasRecyclerView = findViewById(R.id.lv_areas);
         asyncOffers = new ArrayList<>();
         offers = new ArrayList<>();
         format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
+        settingsPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
         imgBtn_ad = findViewById(R.id.imgBtn_ad);
 
-
-        settingsPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        System.out.println(settingsPreferences.getInt("numberOfCategories", 0) == 0);
-        System.out.println(settingsPreferences.getInt("numberOfCheckedCategories", 0) == 0);
-        System.out.println(settingsPreferences.getInt("numberOfAreas", 0) == 0);
-        System.out.println(settingsPreferences.getInt("numberOfCheckedAreas", 0) == 0);
+        TabLayout tabLayout = findViewById(R.id.tabs);
 
 
-        System.out.println(settingsPreferences.getBoolean("checkIsChanged", false));
+        // Instantiate a ViewPager and a PagerAdapter.
+        mPager = (ViewPager) findViewById(R.id.pager);
+        mPagerAdapter = new ScreenSlidePagerAdapter(getSupportFragmentManager());
+        mPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
+        tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mPager));
 
-        System.out.println(settingsPreferences.getInt("numberOfOffers", 0));
-            for (int i = 0; i < settingsPreferences.getInt("numberOfOffers", 0); i++) {
-
-                JobOffer jobOffer = new JobOffer();
-                jobOffer.setId(settingsPreferences.getInt("offerId " + i, 0));
-                jobOffer.setCatid(settingsPreferences.getInt("offerCatid " + i, 0));
-                jobOffer.setCattitle(settingsPreferences.getString("offerCattitle " + i, ""));
-                jobOffer.setAreaid(settingsPreferences.getInt("offerAreaid " + i, 0));
-                jobOffer.setAreatitle(settingsPreferences.getString("offerAreatitle " + i, ""));
-                jobOffer.setTitle(settingsPreferences.getString("offerTitle " + i, ""));
-                jobOffer.setLink(settingsPreferences.getString("offerLink " + i, ""));
-                jobOffer.setDesc(settingsPreferences.getString("offerDesc " + i, ""));
-                jobOffer.setDate(new Date(settingsPreferences.getLong("offerDate " + i, 0)));
-                jobOffer.setDownloaded(settingsPreferences.getString("offerDownloaded " + i, ""));
-                System.out.println(jobOffer.getTitle()+" Is it empty");
-                offers.add(jobOffer);
-
-            }
-
-        for (int i = 0; i < settingsPreferences.getInt("numberOfOffers", 0); i++) {
-                System.out.println(offers.get(i).getTitle());
-                System.out.println(offers.get(i).getId());
-                System.out.println(offers.get(i).getCattitle());
-                System.out.println(offers.get(i).getAreatitle());
-                System.out.println(offers.get(i).getDate().toString());
-        }
-        JobOfferAdapter jobOfferAdapter = new JobOfferAdapter(getApplicationContext(), offers);
-        lv.setAdapter(jobOfferAdapter);
-        System.out.println(settingsPreferences.getLong("interval",0));
-
-
-
-
-
-        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                Intent intentToDetail = new Intent(MainActivity.this,DetailActivity.class);
-                intentToDetail.putExtra("jobOffer", (Serializable) adapterView.getItemAtPosition(i));
-                startActivity(intentToDetail);
-
-            }
-        });
-        if(settingsPreferences.getInt("numberOfImages",0)>0) {
-            paths = new String[settingsPreferences.getInt("numberOfImages", 0)];
-
-            for (int i = 1; i <= paths.length; i++) {
-                paths[i - 1] = settingsPreferences.getString("imageUri" + i, "");
-            }
-            loadImageFromStorage(paths);
-        }
-
+        mPager.setAdapter(mPagerAdapter);
     }
 
 
-    public void btnImgClicked(View view){
-        Intent browseIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://datalabs.edu.gr/"));
-        startActivity(browseIntent);
-    }
 
 
     @Override
@@ -231,6 +183,8 @@ public class MainActivity extends AppCompatActivity  {
                 } else
                     areaIds += settingsPreferences.getInt("checkedAreaId " + v, 0);
             }
+
+
 
 
             queue.add(volleySetCheckedCategories(categoriesIds, areaIds));
@@ -302,6 +256,7 @@ public class MainActivity extends AppCompatActivity  {
                         ArrayList<JobOffer> offersRefresh = new ArrayList<>();
                         asyncOffers.clear();
                         JobOfferAdapter jobOfferAdapter= new JobOfferAdapter(getApplicationContext(), offersRefresh);
+                        ListView lv = new OffersFragment().lv;
 
                         // Display the first 500 characters of the response string.
                         System.out.println("Volley: " + message);
@@ -422,21 +377,24 @@ public class MainActivity extends AppCompatActivity  {
 
 
                         System.out.println(offers.toString());
+//
+//                        lv.setAdapter(jobOfferAdapter);
+//                        System.out.println(settingsPreferences.getLong("interval",0));
+//
+//
+//                        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+//                        @Override
+//                        public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+//                            Intent intentToDetail = new Intent(MainActivity.this,DetailActivity.class);
+//                            intentToDetail.putExtra("jobOffer", (Serializable) adapterView.getItemAtPosition(i));
+//                            startActivity(intentToDetail);
+//
+//                            }
+//                        });
 
-                        lv.setAdapter(jobOfferAdapter);
-                        System.out.println(settingsPreferences.getLong("interval",0));
 
 
-                        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                        @Override
-                        public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                            Intent intentToDetail = new Intent(MainActivity.this,DetailActivity.class);
-                            intentToDetail.putExtra("jobOffer", (Serializable) adapterView.getItemAtPosition(i));
-                            startActivity(intentToDetail);
-
-                            }
-                        });
-
+                        queue.add(volleyUpdateDefault());
 
                     }
 
@@ -498,16 +456,6 @@ public class MainActivity extends AppCompatActivity  {
     @Override
     protected void onResume() {
         super.onResume();
-        if(settingsPreferences.getInt("numberOfImages",0)>0) {
-            paths = new String[settingsPreferences.getInt("numberOfImages", 0)];
-
-            for (int i = 1; i <= paths.length; i++) {
-                paths[i - 1] = settingsPreferences.getString("imageUri" + i, "");
-            }
-            loadImageFromStorage(paths);
-        }
-
-
 
     }
 
@@ -517,6 +465,229 @@ public class MainActivity extends AppCompatActivity  {
     }
 
 
+
+    private class ScreenSlidePagerAdapter extends FragmentStatePagerAdapter {
+        public ScreenSlidePagerAdapter(FragmentManager fm) {
+            super(fm);
+        }
+
+        @Override
+        public Fragment getItem(int position) {
+            switch (position){
+                case 0:
+                    return new OffersFragment();
+                case 1:
+                    return new CategoriesFragment();
+                case 2:
+                    return new AreasFragment();
+                case 3:
+                    return new TimesFragment();
+                default:
+                    return null;
+            }
+        }
+
+        @Override
+        public int getCount() {
+            return NUM_PAGES;
+        }
+    }
+
+    public StringRequest volleyUpdateDefault() {
+        String url = Utils.getUrl()+"jobOfferCategories.php?";
+
+        // Request a string response from the provided URL.
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        System.out.println(response);
+                        ArrayList<OfferCategory> categoriesRefresh = new ArrayList<>();
+                        Fragment fragment = new CategoriesFragment();
+                        RecyclerView categoriesRecyclerView = fragment.getView().findViewById(R.id.lv_categories);
+
+
+
+                        // Display the first 500 characters of the response string.
+                        try {
+                            JSONObject jsonObjectAll = new JSONObject(response);
+
+                            JSONArray jsonArray = jsonObjectAll.getJSONArray("joboffercategories");
+                            System.out.println(jsonArray.length());
+                            settingsPreferences.edit().putInt("numberOfCategories", jsonArray.length()).apply();
+                            System.out.println(settingsPreferences.getInt("numberOfCategories", 0));
+                            for (int i = 0; i < jsonArray.length(); i++) {
+                                JSONObject jsonObjectCategory = jsonArray.getJSONObject(i);
+                                settingsPreferences.edit().putInt("offerCategoryId " + i, Integer.valueOf(jsonObjectCategory.getString("jacat_id"))).apply();
+                                settingsPreferences.edit().putString("offerCategoryTitle " + i, jsonObjectCategory.getString("jacat_title")).apply();
+                                System.out.println(jsonObjectCategory.toString());
+
+                            }
+
+                            if (settingsPreferences.getInt("numberOfCategories", 0) != 0) {
+                                for (int i = 0; i < settingsPreferences.getInt("numberOfCategories", 0); i++) {
+                                    OfferCategory category = new OfferCategory();
+                                    category.setCatid(settingsPreferences.getInt("offerCategoryId " + i, 0));
+                                    category.setTitle(settingsPreferences.getString("offerCategoryTitle " + i, ""));
+                                    categoriesRefresh.add(category);
+                                    System.out.println(categoriesRefresh.get(i).getTitle() + "checkBoxAdapter");
+                                }
+
+                                //RecyclerView layout manager
+                                LinearLayoutManager recyclerLayoutManager = new LinearLayoutManager(MainActivity.this);
+                                categoriesRecyclerView.setLayoutManager(recyclerLayoutManager);
+
+                                //RecyclerView item decorator
+                                DividerItemDecoration dividerItemDecoration =
+                                        new DividerItemDecoration(categoriesRecyclerView.getContext(),
+                                                recyclerLayoutManager.getOrientation());
+                                categoriesRecyclerView.addItemDecoration(dividerItemDecoration);
+
+                                //RecyclerView adapater
+                                CheckRecycleAdapter recyclerViewAdapter = new
+                                        CheckRecycleAdapter(categoriesRefresh,MainActivity.this);
+                                categoriesRecyclerView.setAdapter(recyclerViewAdapter);
+
+                                queue.add(volleyUpdateDefaultAreas());
+
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+                if (error instanceof TimeoutError || error instanceof NoConnectionError) {
+                    message = "TimeOutError";
+                    //This indicates that the reuest has either time out or there is no connection
+
+                } else if (error instanceof AuthFailureError) {
+                    message = "AuthFailureError";
+                    // Error indicating that there was an Authentication Failure while performing the request
+
+                } else if (error instanceof ServerError) {
+                    message = "ServerError";
+                    //Indicates that the server responded with a error response
+
+                } else if (error instanceof NetworkError) {
+                    message = "NetworkError";
+                    //Indicates that there was network error while performing the request
+
+                } else if (error instanceof ParseError) {
+                    message = "ParseError";
+                    // Indicates that the server response could not be parsed
+
+                }
+                System.out.println("Volley: " + message);
+                if (!message.equals("")) {
+                    Toast.makeText(MainActivity.this, Utils.getServerError(), Toast.LENGTH_LONG).show();
+                    Intent intentError = new Intent(MainActivity.this, SettingActivity.class);
+                    startActivity(intentError);
+                }
+            }
+        }
+        );
+        return stringRequest;
+    }
+
+    public StringRequest volleyUpdateDefaultAreas() {
+        String url = Utils.getUrl()+"jobOfferAreas.php?";
+
+        // Request a string response from the provided URL.
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        System.out.println(response);
+                        ArrayList<OfferArea> areasRefresh = new ArrayList<>();
+                        Fragment fragment = new AreasFragment();
+                        RecyclerView areasRecyclerView = fragment.getView().findViewById(R.id.lv_areas);
+
+
+                        // Display the first 500 characters of the response string.
+                        try {
+                            JSONObject jsonObjectAll = new JSONObject(response);
+
+                            JSONArray jsonArray = jsonObjectAll.getJSONArray("jobofferareas");
+                            System.out.println(jsonArray.length());
+                            settingsPreferences.edit().putInt("numberOfAreas", jsonArray.length()).apply();
+                            System.out.println(settingsPreferences.getInt("numberOfAreas", 0));
+                            for (int i = 0; i < jsonArray.length(); i++) {
+                                JSONObject jsonObjectCategory = jsonArray.getJSONObject(i);
+                                settingsPreferences.edit().putInt("offerAreaId " + i, Integer.valueOf(jsonObjectCategory.getString("jloc_id"))).apply();
+                                settingsPreferences.edit().putString("offerAreaTitle " + i, jsonObjectCategory.getString("jloc_title")).apply();
+                                System.out.println(jsonObjectCategory.toString());
+
+                            }
+
+                            if (settingsPreferences.getInt("numberOfAreas", 0) != 0) {
+                                for (int i = 0; i < settingsPreferences.getInt("numberOfAreas", 0); i++) {
+                                    OfferArea category = new OfferArea();
+                                    category.setAreaid(settingsPreferences.getInt("offerAreaId " + i, 0));
+                                    category.setTitle(settingsPreferences.getString("offerAreaTitle " + i, ""));
+                                    areasRefresh.add(category);
+                                    System.out.println(areasRefresh.get(i).getTitle() + "checkBoxAdapter");
+                                }
+
+                                //RecyclerView layout manager
+                                LinearLayoutManager recyclerLayoutManager = new LinearLayoutManager(MainActivity.this);
+                                areasRecyclerView.setLayoutManager(recyclerLayoutManager);
+
+                                //RecyclerView item decorator
+                                DividerItemDecoration dividerItemDecoration =
+                                        new DividerItemDecoration(areasRecyclerView.getContext(),
+                                                recyclerLayoutManager.getOrientation());
+                                areasRecyclerView.addItemDecoration(dividerItemDecoration);
+
+                                //RecyclerView adapater
+                                CheckAreaRecycleAdapter recyclerViewAdapter = new
+                                        CheckAreaRecycleAdapter(areasRefresh,MainActivity.this);
+                                areasRecyclerView.setAdapter(recyclerViewAdapter);
+
+
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+                if (error instanceof TimeoutError || error instanceof NoConnectionError) {
+                    message = "TimeOutError";
+                    //This indicates that the reuest has either time out or there is no connection
+
+                } else if (error instanceof AuthFailureError) {
+                    message = "AuthFailureError";
+                    // Error indicating that there was an Authentication Failure while performing the request
+
+                } else if (error instanceof ServerError) {
+                    message = "ServerError";
+                    //Indicates that the server responded with a error response
+
+                } else if (error instanceof NetworkError) {
+                    message = "NetworkError";
+                    //Indicates that there was network error while performing the request
+
+                } else if (error instanceof ParseError) {
+                    message = "ParseError";
+                    // Indicates that the server response could not be parsed
+
+                }
+                System.out.println("Volley: " + message);
+                if (!message.equals("")) {
+                    Toast.makeText(MainActivity.this, Utils.getServerError(), Toast.LENGTH_LONG).show();
+                    Intent intentError = new Intent(MainActivity.this, SettingActivity.class);
+                    startActivity(intentError);
+                }
+            }
+        }
+        );
+        return stringRequest;
+    }
 
     private void loadImageFromStorage(String[] paths)
     {
@@ -536,9 +707,9 @@ public class MainActivity extends AppCompatActivity  {
         Random r = new Random();
 
         int rnum =r.nextInt(paths.length);
-        ImageButton img = findViewById(R.id.imgBtn_ad);
-        img.setVisibility(View.VISIBLE);
-        img.setImageBitmap(bitmaps.get(rnum));
+        imgBtn_ad = findViewById(R.id.imgBtn_ad);
+        imgBtn_ad.setVisibility(View.VISIBLE);
+        imgBtn_ad.setImageBitmap(bitmaps.get(rnum));
 
     }
 
