@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -7,4 +7,35 @@
     android:background="@drawable/app_splash_screen"
     android:orientation="vertical">
 
-</LinearLayout>
+    <ProgressBar
+        android:id="@+id/pgbr"
+
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_gravity="center"
+        android:layout_marginBottom="142dp"
+        android:layout_weight="1"
+        android:indeterminate="true"
+        android:indeterminateTint="@color/white"
+        android:indeterminateTintMode="src_atop"
+        android:tooltipText="Downloading"
+        android:visibility="visible" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/pgbr"
+        android:layout_below="@+id/pgbr"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="106dp"
+        android:background="@color/white"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:text="Παρακαλώ Περιμένετε..."
+        android:textColor="@color/black"
+        android:textSize="24sp" />
+
+</RelativeLayout>

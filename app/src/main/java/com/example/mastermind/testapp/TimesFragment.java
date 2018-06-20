@@ -1,6 +1,9 @@
 package com.example.mastermind.testapp;
 
+import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -12,6 +15,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.RadioButton;
+import android.widget.Toast;
 
 import com.android.volley.RequestQueue;
 
@@ -28,8 +32,9 @@ public class TimesFragment extends Fragment {
 
     RadioButton radioButton, radioButton1, radioButton2;
 
-    SimpleDateFormat format;
+    Button btn_save_times;
 
+    PendingIntent pendingIntentA;
 
 
     @Override
@@ -42,6 +47,7 @@ public class TimesFragment extends Fragment {
         radioButton = rootView.findViewById(R.id.rb_day);
         radioButton1 = rootView.findViewById(R.id.rb_once);
         radioButton2 = rootView.findViewById(R.id.rb_twice);
+        btn_save_times = rootView.findViewById(R.id.btn_save_times);
 
         if (settingsPreferences.getLong("interval", 0) == 86400000) {
             radioButton.setChecked(true);
@@ -51,6 +57,41 @@ public class TimesFragment extends Fragment {
             radioButton2.setChecked(true);
         }
 
+        btn_save_times.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                if(radioButton.isChecked()){
+                    settingsPreferences.edit().putLong("interval",86400000).apply();
+                }else if(radioButton1.isChecked()){
+                    settingsPreferences.edit().putLong("interval",302400000).apply();
+                }else{
+                    settingsPreferences.edit().putLong("interval",604800000).apply();
+                }
+                cancel();
+                start();
+            }
+        });
+
         return rootView;
     }
+
+    public void start() {
+
+        AlarmManager manager = (AlarmManager) getActivity().getSystemService(Context.ALARM_SERVICE);
+
+        Intent alarmIntent = new Intent(getContext(), AlarmReceiver.class);
+        pendingIntentA = PendingIntent.getBroadcast(getContext(), 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        manager.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), settingsPreferences.getLong("interval", 0), pendingIntentA);
+
+
+    }
+
+    public void cancel() {
+        Intent alarmIntent = new Intent(getContext(), AlarmReceiver.class);
+        AlarmManager manager = (AlarmManager) getActivity().getSystemService(Context.ALARM_SERVICE);
+        manager.cancel(PendingIntent.getBroadcast(getContext(), 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT));
+
+    }
+
 }

@@ -89,7 +89,6 @@ public class DetailActivity extends AppCompatActivity {
 
             try {
                 File d = new File(path);
-                System.out.println("This is the path to upload: " + d.toString());
                 bitmaps.add(BitmapFactory.decodeStream(new FileInputStream(d)));
             } catch (FileNotFoundException e) {
                 e.printStackTrace();

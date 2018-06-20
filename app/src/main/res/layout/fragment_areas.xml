@@ -10,17 +10,24 @@
     android:orientation="vertical">
 
 
-    <TextView
-        android:id="@+id/txtv_areas"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="Περιοχές Αγγελιών"
-        android:textColor="#ff000000"
-        android:textSize="24sp" />
+        <TextView
+            android:id="@+id/txtv_areas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:padding="10dp"
+            android:text="Περιοχές Αγγελιών"
+            android:textColor="#ff000000"
+            android:textSize="24sp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_marginBottom="5dp"
+            android:background="@android:color/black" />
 
 
-    <android.support.v7.widget.RecyclerView
+    <com.example.mastermind.testapp.MyListView
         android:id="@+id/lv_areas"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
@@ -30,9 +37,18 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:background="@android:color/transparent"
+        android:layout_marginTop="10dp"
         android:text="Αποθήκευση"
-        tools:textAllCaps="false" />
+        android:textAllCaps="false"
+        android:background="@drawable/textshape"
+        android:onClick="linkClicked"
+        android:paddingHorizontal="15dp"
+        android:paddingVertical="10dp"
+        android:shadowColor="#A8A8A8"
+        android:shadowDx="0"
+        android:shadowDy="0"
+        android:shadowRadius="5"
+         />
 
 </LinearLayout>
 

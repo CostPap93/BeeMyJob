@@ -10,7 +10,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -22,7 +21,6 @@ import android.os.Build;
 import android.preference.PreferenceManager;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.widget.Toast;
@@ -37,7 +35,6 @@ import com.android.volley.Response;
 import com.android.volley.ServerError;
 import com.android.volley.TimeoutError;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.nex3z.notificationbadge.NotificationBadge;
@@ -63,11 +60,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import static android.content.Context.ALARM_SERVICE;
 import static android.content.Context.MODE_PRIVATE;
 import static android.content.Context.NOTIFICATION_SERVICE;
 
@@ -128,7 +123,6 @@ public class AlarmReceiver extends BroadcastReceiver {
 
         }else {
             settingsPreferences.edit().putBoolean("makeRequest", true).apply();
-            System.out.println("Job Scheduled");
             queue.stop();
             scheduleJob();
         }
@@ -170,14 +164,9 @@ public class AlarmReceiver extends BroadcastReceiver {
         boolean searchChecked = false;
         int notCount = 0;
         for (int i = 0; i < settingsPreferences.getInt("numberOfOffers", 0); i++) {
-            System.out.println(settingsPreferences.getInt("numberOfOffers", 0));
-            System.out.println(settingsPreferences.getInt("numberOfCheckedCategories", 0));
-            System.out.println(settingsPreferences.getLong("offerDate " + i,0) > settingsPreferences.getLong("lastSeenDate", 0));
             if (settingsPreferences.getLong("offerDate " + i,0) >settingsPreferences.getLong("lastSeenDate", 0)) {
                 for(int j = 0; j < settingsPreferences.getInt("numberOfCheckedCategories", 0); j++) {
                     for (int k = 0; k < settingsPreferences.getInt("numberOfCheckedAreas", 0); k++) {
-                        System.out.println(settingsPreferences.getInt("offerCatid " + i, 0));
-                        System.out.println(settingsPreferences.getInt("checkedCategoryId " + j, 0));
                         if (settingsPreferences.getInt("offerCatid " + i, 0) == settingsPreferences.getInt("checkedCategoryId " + j, 0) && settingsPreferences.getInt("offerAreaid " + i, 0) == settingsPreferences.getInt("checkedAreaId " + k, 0)) {
                             notCount++;
 
@@ -185,8 +174,6 @@ public class AlarmReceiver extends BroadcastReceiver {
                     }
                 }
             }
-
-            System.out.println(settingsPreferences.getLong("lastSeenDate", 0) + " at the end of alarmreceiver ");
 
         }
 
@@ -203,9 +190,7 @@ public class AlarmReceiver extends BroadcastReceiver {
                     public void onResponse(String response) {
 
                         // Display the first 500 characters of the response string.
-                        System.out.println("Volley: " + message);
                         try {
-                            System.out.println(response);
                             JSONObject jsonObjectAll = new JSONObject(response);
                             JSONArray jsonArray = jsonObjectAll.getJSONArray("offers");
                             int i = 0;
@@ -226,7 +211,6 @@ public class AlarmReceiver extends BroadcastReceiver {
                                 offer.setDesc(jsonObjectCategory.getString("jad_desc"));
                                 offer.setDate(format.parse(jsonObjectCategory.getString("jad_date")));
                                 offer.setDownloaded(jsonObjectCategory.getString("jad_downloaded"));
-                                System.out.println(offer.getTitle() + " first time");
 
                                 asyncOffers.add(offer);
 
@@ -241,10 +225,6 @@ public class AlarmReceiver extends BroadcastReceiver {
                                             return -1;
                                     }
                                 });
-                                for (int x = 0; x < asyncOffers.size(); x++) {
-                                    System.out.println(asyncOffers.get(x).getTitle());
-                                }
-
 
                                 i++;
                             }
@@ -286,22 +266,17 @@ public class AlarmReceiver extends BroadcastReceiver {
                                     settingsPreferences.edit().putString("offerDesc " + i, asyncOffers.get(i).getDesc()).apply();
                                     settingsPreferences.edit().putLong("offerDate " + i, asyncOffers.get(i).getDate().getTime()).apply();
                                     settingsPreferences.edit().putString("offerDownloaded " + i, asyncOffers.get(i).getDownloaded()).apply();
-                                    System.out.println(settingsPreferences.getLong("offerDate " + i, 0));
-                                    System.out.println(settingsPreferences.getString("offerTitle " + i, ""));
+
                                     settingsPreferences.edit().putInt("numberOfOffers", asyncOffers.size()).apply();
                                 } else
                                     settingsPreferences.edit().putInt("numberOfOffers", 5).apply();
                             }
-                            System.out.println(settingsPreferences.getLong("lastSeenDate", 0));
 
 
                             if (checkForOffers() > 0 && asyncOffers.get(0).getDate().getTime() > settingsPreferences.getLong("lastNotDate", 0)) {
                                 addNewBubble();
 
                                 settingsPreferences.edit().putInt("numberOfUnseenOffers", checkForOffers()).apply();
-                                System.out.println(settingsPreferences.getInt("numberOfUnseenOffers", 0));
-
-
                                 notification = new NotificationCompat.Builder(MyApplication.getAppContext(), "notification");
                                 notification.setAutoCancel(true);
 
@@ -360,7 +335,6 @@ public class AlarmReceiver extends BroadcastReceiver {
                     // Indicates that the server response could not be parsed
 
                 }
-                System.out.println("Volley: " + message);
             }
         }
         )
@@ -436,8 +410,6 @@ public class AlarmReceiver extends BroadcastReceiver {
 
 
                         // Display the first 500 characters of the response string.
-                        System.out.println("Volley: " + message);
-                        System.out.println(response);
 
                         try {
                             JSONObject jsonObjectAll = new JSONObject(response);
@@ -496,12 +468,11 @@ public class AlarmReceiver extends BroadcastReceiver {
                     // Indicates that the server response could not be parsed
 
                 }
-                System.out.println("Volley: " + message);
-                if (!message.equals("")) {
                     Toast.makeText(MyApplication.getAppContext(), Utils.getServerError(), Toast.LENGTH_LONG).show();
+
                     Intent intentError = new Intent(MyApplication.getAppContext(), MainActivity.class);
+                    intentError.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     MyApplication.getAppContext().startActivity(intentError);
-                }
             }
         }
         );
@@ -581,7 +552,6 @@ public class AlarmReceiver extends BroadcastReceiver {
             for(Bitmap bitmap:result) {
                 counter++;
                 Uri uri = saveImageToInternalStorage(bitmap,counter);
-                System.out.println(uri.toString());
                 settingsPreferences.edit().putString("imageUri"+counter,uri.toString()).apply();
             }
             settingsPreferences.edit().putInt("numberOfImages",counter).apply();

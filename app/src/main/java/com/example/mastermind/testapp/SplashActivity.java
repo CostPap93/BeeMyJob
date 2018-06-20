@@ -24,6 +24,9 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
@@ -44,6 +47,7 @@ import org.apache.http.conn.ConnectTimeoutException;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -76,6 +80,8 @@ public class SplashActivity extends AppCompatActivity {
     String message = "";
     RequestQueue queue;
 
+    ProgressBar pgbr;
+
     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     ArrayList<JobOffer> asyncOffers = new ArrayList<>();
     String categoriesIds;
@@ -87,7 +93,6 @@ public class SplashActivity extends AppCompatActivity {
     int counter;
 
 
-
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -95,19 +100,20 @@ public class SplashActivity extends AppCompatActivity {
         areasIds = "";
         categoriesIds = "";
         counter = 0;
+        pgbr = findViewById(R.id.pgbr);
 
-        if(queue == null) {
+
+        if (queue == null) {
             queue = Volley.newRequestQueue(this);
         }
 
 
-        if(Build.VERSION.SDK_INT>=23){
-            if(!Settings.canDrawOverlays(SplashActivity.this)){
-                Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:"+getPackageName()));
-                startActivityForResult(intent,MY_PERMISSION);
+        if (Build.VERSION.SDK_INT >= 23) {
+            if (!Settings.canDrawOverlays(SplashActivity.this)) {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
+                startActivityForResult(intent, MY_PERMISSION);
             }
-        }
-        else{
+        } else {
             Intent intent = new Intent(SplashActivity.this, Service.class);
             startService(intent);
         }
@@ -115,22 +121,13 @@ public class SplashActivity extends AppCompatActivity {
 
         settingsPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         settingsPreferences.edit().clear().apply();
-        System.out.println(settingsPreferences.getInt("numberOfCategories", 0) == 0);
-        System.out.println(settingsPreferences.getInt("numberOfCheckedCategories", 0) == 0);
 
-
-
-        System.out.println(settingsPreferences.getBoolean("checkIsChanged", false));
-
-        start();
-
-        new Handler().postDelayed(new Runnable(){
+        new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 if (settingsPreferences.getInt("numberOfCategories", 0) == 0 && settingsPreferences.getInt("numberOfAreas", 0) == 0 && isConn()) {
-                    settingsPreferences.edit().putLong("interval", 6000).apply();
-                    settingsPreferences.edit().putBoolean("makeRequest",false).apply();
-                    System.out.println(settingsPreferences.getLong("interval",0));
+                    settingsPreferences.edit().putLong("interval", 86400000).apply();
+                    settingsPreferences.edit().putBoolean("makeRequest", false).apply();
                     start();
 
                     volleySetDefault();
@@ -139,24 +136,26 @@ public class SplashActivity extends AppCompatActivity {
 
                     Toast.makeText(SplashActivity.this, "Πρέπει να είστε συνδεδεμένος την πρώτη φορά!", Toast.LENGTH_LONG).show();
 
-                    settingsPreferences.edit().putLong("interval", 6000).apply();
-                    settingsPreferences.edit().putBoolean("makeRequest",false).apply();
-                    System.out.println(settingsPreferences.getLong("interval",0));
+                    settingsPreferences.edit().putLong("interval", 86400000).apply();
+                    settingsPreferences.edit().putBoolean("makeRequest", false).apply();
                     start();
 
-                    Intent intent = new Intent(SplashActivity.this,MainActivity.class);
+                    Intent intent = new Intent(SplashActivity.this, MainActivity.class);
                     startActivity(intent);
                 } else {
-                    Intent intent = new Intent(SplashActivity.this,MainActivity.class);
+                    Intent intent = new Intent(SplashActivity.this, MainActivity.class);
                     startActivity(intent);
                 }
             }
-        },200 );
-
-
-
+        },500);
 
     }
+
+
+
+
+
+
 
 
     public boolean isConn(){
@@ -198,10 +197,8 @@ public class SplashActivity extends AppCompatActivity {
                             JSONObject jsonObjectAll = new JSONObject(response);
 
                             JSONArray jsonArray = jsonObjectAll.getJSONArray("joboffercategories");
-                            System.out.println(jsonArray.length());
                             settingsPreferences.edit().putInt("numberOfCategories", jsonArray.length()).apply();
                             settingsPreferences.edit().putInt("numberOfCheckedCategories", jsonArray.length()).apply();
-                            System.out.println(settingsPreferences.getInt("numberOfCategories", 0));
                             for (int i = 0; i < jsonArray.length(); i++) {
                                 JSONObject jsonObjectCategory = jsonArray.getJSONObject(i);
                                 settingsPreferences.edit().putInt("offerCategoryId " + i, Integer.valueOf(jsonObjectCategory.getString("jacat_id"))).apply();
@@ -215,14 +212,10 @@ public class SplashActivity extends AppCompatActivity {
                                     categoriesIds += "," + jsonObjectCategory.getString("jacat_id");
 
 
-                                System.out.println(categoriesIds);
-                                System.out.println(jsonObjectCategory.toString());
-                                System.out.println(settingsPreferences.getInt("checkedCategoryId " + i, 0) + "In The Task set Default");
-                                System.out.println(settingsPreferences.getString("checkedCategoryTitle " + i, ""));
                             }
 
                             settingsPreferences.edit().putString("categoriesIds",categoriesIds).apply();
-                            System.out.println(settingsPreferences.getInt("numberOfCheckedCategories", 0));
+                            pgbr.setProgress(20);
                             volleySetDefaultAreas();
 
 
@@ -259,12 +252,10 @@ public class SplashActivity extends AppCompatActivity {
                     // Indicates that the server response could not be parsed
 
                 }
-                System.out.println("Volley: "+ message);
-                if(!message.equals("")){
                     Toast.makeText(SplashActivity.this,Utils.getServerError(),Toast.LENGTH_LONG).show();
                     Intent intentError = new Intent(SplashActivity.this,MainActivity.class);
                     startActivity(intentError);
-                }
+
             }
         }
         );
@@ -306,7 +297,6 @@ public class SplashActivity extends AppCompatActivity {
                                 offer.setDate(format.parse(jsonObjectCategory.getString("jad_date")));
                                 offer.setDownloaded(jsonObjectCategory.getString("jad_downloaded"));
                                 offer.setLink(jsonObjectCategory.getString("jad_link"));
-                                System.out.println(offer.getTitle() + " first time");
 
                                 asyncOffers.add(offer);
 
@@ -321,10 +311,6 @@ public class SplashActivity extends AppCompatActivity {
                                             return -1;
                                     }
                                 });
-                                for (int x = 0; x < asyncOffers.size(); x++) {
-                                    System.out.println(asyncOffers.get(x).getTitle());
-                                }
-
 
                                 i++;
                             }
@@ -350,8 +336,6 @@ public class SplashActivity extends AppCompatActivity {
                                     settingsPreferences.edit().putString("offerDesc " + i, asyncOffers.get(i).getDesc()).apply();
                                     settingsPreferences.edit().putLong("offerDate " + i, asyncOffers.get(i).getDate().getTime()).apply();
                                     settingsPreferences.edit().putString("offerDownloaded " + i, asyncOffers.get(i).getDownloaded()).apply();
-                                    System.out.println(settingsPreferences.getLong("offerDate " + i, 0));
-                                    System.out.println(settingsPreferences.getString("offerTitle " + i, ""));
                                     settingsPreferences.edit().putInt("numberOfOffers", asyncOffers.size()).apply();
                                 } else
                                     settingsPreferences.edit().putInt("numberOfOffers", 5).apply();
@@ -360,14 +344,10 @@ public class SplashActivity extends AppCompatActivity {
                             settingsPreferences.edit().putLong("lastSeenDate", asyncOffers.get(0).getDate().getTime()).apply();
                             settingsPreferences.edit().putLong("lastNotDate", asyncOffers.get(0).getDate().getTime()).apply();
 
-                            System.out.println(settingsPreferences.getLong("lastSeenDate", 0));
 
                         }
 
-
-                        System.out.println(t);
-                        System.out.println(settingsPreferences.getInt("numberOfCheckedCategories", 0));
-
+                        pgbr.setProgress(60);
                         volleyImageNames();
 
                     }
@@ -397,12 +377,11 @@ public class SplashActivity extends AppCompatActivity {
                     // Indicates that the server response could not be parsed
 
                 }
-                System.out.println("Volley: " + message);
-                if(!message.equals("")){
+
                     Toast.makeText(SplashActivity.this,Utils.getServerError(),Toast.LENGTH_LONG).show();
                     Intent intentError = new Intent(SplashActivity.this,MainActivity.class);
                     startActivity(intentError);
-                }
+
             }
         })
         {
@@ -414,7 +393,9 @@ public class SplashActivity extends AppCompatActivity {
 
                 return params;
             }
-        };
+        }
+
+        ;
         Volley.newRequestQueue(SplashActivity.this).add(stringRequest);
     }
 
@@ -426,7 +407,6 @@ public class SplashActivity extends AppCompatActivity {
 
     public void volleySetDefaultAreas(){
         String url =Utils.getUrl()+"jobOfferAreas.php";
-
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
@@ -442,10 +422,8 @@ public class SplashActivity extends AppCompatActivity {
                             JSONObject jsonObjectAll = new JSONObject(response);
 
                             JSONArray jsonArray = jsonObjectAll.getJSONArray("jobofferareas");
-                            System.out.println(jsonArray.length());
                             settingsPreferences.edit().putInt("numberOfAreas", jsonArray.length()).apply();
                             settingsPreferences.edit().putInt("numberOfCheckedAreas", jsonArray.length()).apply();
-                            System.out.println(settingsPreferences.getInt("numberOfAreas", 0));
                             for (int i = 0; i < jsonArray.length(); i++) {
                                 JSONObject jsonObjectCategory = jsonArray.getJSONObject(i);
                                 settingsPreferences.edit().putInt("offerAreaId " + i, Integer.valueOf(jsonObjectCategory.getString("jloc_id"))).apply();
@@ -457,22 +435,13 @@ public class SplashActivity extends AppCompatActivity {
                                     areasIds += jsonObjectCategory.getString("jloc_id");
                                 }else
                                     areasIds += ","+ jsonObjectCategory.getString("jloc_id");
-                                System.out.println(areasIds.toString());
-
-                                System.out.println(jsonObjectCategory.toString());
-                                System.out.println(settingsPreferences.getInt("checkedAreaId " + i, 0) + "In The Task set Default");
-                                System.out.println(settingsPreferences.getString("checkedAreaTitle " + i, ""));
                             }
                             settingsPreferences.edit().putString("areasIds",areasIds).apply();
-                            System.out.println(settingsPreferences.getInt("numberOfCheckedAreas", 0));
 
-
-                            System.out.println(settingsPreferences.getString("categoriesIds",""));
-                            System.out.println(settingsPreferences.getString("areasIds",""));
 
                             String url = Utils.getUrl()+"jobAdsArray.php?jacat_id="+categoriesIds+"&jloc_id="+areasIds;
-                            System.out.println(url);
 
+                            pgbr.setProgress(40);
                             volleySetCheckedCategories(categoriesIds,areasIds);
 
 
@@ -507,12 +476,11 @@ public class SplashActivity extends AppCompatActivity {
                     // Indicates that the server response could not be parsed
 
                 }
-                System.out.println("Volley: "+ message);
-                if(!message.equals("")){
+
                     Toast.makeText(SplashActivity.this,Utils.getServerError(),Toast.LENGTH_LONG).show();
                     Intent intentError = new Intent(SplashActivity.this,MainActivity.class);
                     startActivity(intentError);
-                }
+
             }
         }
         );
@@ -534,8 +502,6 @@ public class SplashActivity extends AppCompatActivity {
 
 
                         // Display the first 500 characters of the response string.
-                        System.out.println("Volley: " + message);
-                        System.out.println(response);
 
                         try {
                             JSONObject jsonObjectAll = new JSONObject(response);
@@ -551,6 +517,7 @@ public class SplashActivity extends AppCompatActivity {
                             if(jsonArray.length()>0) {
                                 JSONObject jsonObject1 = jsonArray.getJSONObject(0);
                                 settingsPreferences.edit().putLong("lastImageDate", (format.parse(jsonObject1.getString("image_date"))).getTime()).apply();
+                                pgbr.setProgress(80);
                                 new DownloadTask().execute(imageNames);
                             }
 
@@ -590,12 +557,8 @@ public class SplashActivity extends AppCompatActivity {
                     // Indicates that the server response could not be parsed
 
                 }
-                System.out.println("Volley: " + message);
-                if (!message.equals("")) {
                     Toast.makeText(SplashActivity.this, Utils.getServerError(), Toast.LENGTH_LONG).show();
-                    Intent intentError = new Intent(SplashActivity.this, SettingActivity.class);
-                    startActivity(intentError);
-                }
+
             }
         }
         );
@@ -677,10 +640,10 @@ public class SplashActivity extends AppCompatActivity {
             for(Bitmap bitmap:result) {
                 counter++;
                 Uri uri = saveImageToInternalStorage(bitmap,counter);
-                System.out.println(uri.toString());
                 settingsPreferences.edit().putString("imageUri"+counter,uri.toString()).apply();
             }
             settingsPreferences.edit().putInt("numberOfImages",counter).apply();
+
 
             Intent intent = new Intent(SplashActivity.this,MainActivity.class);
             startActivity(intent);

@@ -1,36 +1,57 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"    android:layout_width="match_parent"
     android:layout_height="match_parent">
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
+
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:background="@drawable/app_empty_background"
         android:orientation="vertical">
 
 
-    <TextView
-        android:id="@+id/txtv_categories"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="Κατηγορίες Αγγελιών"
-        android:textColor="#ff000000"
-        android:textSize="24sp" />
+        <TextView
+            android:id="@+id/txtv_categories"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:padding="10dp"
+            android:text="Κατηγορίες Αγγελιών"
+            android:textColor="#ff000000"
+            android:textSize="24sp" />
 
+        <View
+            android:id="@+id/v_border"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_below="@+id/txtv_categories"
+            android:layout_marginBottom="5dp"
+            android:background="@android:color/black" />
 
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/lv_categories"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        <com.example.mastermind.testapp.MyListView
+            android:id="@+id/lv_categories"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/v_border"
+            android:clipChildren="false" />
 
-    <Button
-        android:id="@+id/btn_save_categories"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="Αποθήκευση"
-        tools:textAllCaps="false" />
+        <Button
+            android:id="@+id/btn_save_categories"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/lv_categories"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="center"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/textshape"
+            android:onClick="linkClicked"
+            android:paddingHorizontal="15dp"
+            android:paddingVertical="10dp"
+            android:shadowColor="#A8A8A8"
+            android:shadowDx="0"
+            android:shadowDy="0"
+            android:shadowRadius="5"
+            android:text="Αποθήκευση"
+            android:textAllCaps="false" />
 
-    </LinearLayout>
+    </RelativeLayout>
 </ScrollView>

@@ -172,14 +172,9 @@ public class NetworkSchedulerService extends JobService implements
         boolean searchChecked = false;
         int notCount = 0;
         for (int i = 0; i < settingsPreferences.getInt("numberOfOffers", 0); i++) {
-            System.out.println(settingsPreferences.getInt("numberOfOffers", 0));
-            System.out.println(settingsPreferences.getInt("numberOfCheckedCategories", 0));
-            System.out.println(settingsPreferences.getLong("offerDate " + i,0) > settingsPreferences.getLong("lastSeenDate", 0));
             if (settingsPreferences.getLong("offerDate " + i,0) > settingsPreferences.getLong("lastSeenDate", 0)) {
                 for(int j = 0; j < settingsPreferences.getInt("numberOfCheckedCategories", 0); j++) {
                     for (int k = 0; k < settingsPreferences.getInt("numberOfCheckedAreas", 0); k++) {
-                        System.out.println(settingsPreferences.getInt("offerCatid " + i, 0));
-                        System.out.println(settingsPreferences.getInt("checkedCategoryId " + j, 0));
                         if (settingsPreferences.getInt("offerCatid " + i, 0) == settingsPreferences.getInt("checkedCategoryId " + j, 0) && settingsPreferences.getInt("offerAreaid " + i, 0) == settingsPreferences.getInt("checkedAreaId " + k, 0)) {
                             notCount++;
 
@@ -187,8 +182,6 @@ public class NetworkSchedulerService extends JobService implements
                     }
                 }
             }
-
-            System.out.println(settingsPreferences.getLong("lastSeenDate", 0) + " at the end of alarmreceiver ");
 
         }
 
@@ -205,7 +198,6 @@ public class NetworkSchedulerService extends JobService implements
                     public void onResponse(String response) {
 
                         // Display the first 500 characters of the response string.
-                        System.out.println("Volley: " + message);
                         try {
                             JSONObject jsonObjectAll = new JSONObject(response);
                             JSONArray jsonArray = jsonObjectAll.getJSONArray("offers");
@@ -227,7 +219,6 @@ public class NetworkSchedulerService extends JobService implements
                                 offer.setDesc(jsonObjectCategory.getString("jad_desc"));
                                 offer.setDate(format.parse(jsonObjectCategory.getString("jad_date")));
                                 offer.setDownloaded(jsonObjectCategory.getString("jad_downloaded"));
-                                System.out.println(offer.getTitle() + " first time");
 
                                 asyncOffers.add(offer);
 
@@ -242,11 +233,6 @@ public class NetworkSchedulerService extends JobService implements
                                             return -1;
                                     }
                                 });
-                                for (int x = 0; x < asyncOffers.size(); x++) {
-                                    System.out.println(asyncOffers.get(x).getTitle());
-                                }
-
-
                                 i++;
                             }
 
@@ -285,13 +271,10 @@ public class NetworkSchedulerService extends JobService implements
                                     settingsPreferences.edit().putString("offerDesc " + i, asyncOffers.get(i).getDesc()).apply();
                                     settingsPreferences.edit().putLong("offerDate " + i, asyncOffers.get(i).getDate().getTime()).apply();
                                     settingsPreferences.edit().putString("offerDownloaded " + i, asyncOffers.get(i).getDownloaded()).apply();
-                                    System.out.println(settingsPreferences.getLong("offerDate " + i, 0));
-                                    System.out.println(settingsPreferences.getString("offerTitle " + i, ""));
                                     settingsPreferences.edit().putInt("numberOfOffers", asyncOffers.size()).apply();
                                 } else
                                     settingsPreferences.edit().putInt("numberOfOffers", 5).apply();
                             }
-                            System.out.println(settingsPreferences.getLong("lastSeenDate", 0));
 
 
                             if (checkForOffers() > 0 && asyncOffers.get(0).getDate().getTime() > settingsPreferences.getLong("lastNotDate", 0)) {
@@ -300,8 +283,6 @@ public class NetworkSchedulerService extends JobService implements
                                     addNewBubble();
 
                                 settingsPreferences.edit().putInt("numberOfUnseenOffers", checkForOffers()).apply();
-                                System.out.println(settingsPreferences.getInt("numberOfUnseenOffers", 0));
-
 
                                 notification = new NotificationCompat.Builder(MyApplication.getAppContext(), "notification");
                                 notification.setAutoCancel(true);
@@ -361,7 +342,6 @@ public class NetworkSchedulerService extends JobService implements
                     // Indicates that the server response could not be parsed
 
                 }
-                System.out.println("Volley: " + message);
             }
         }
         )
@@ -433,8 +413,6 @@ public class NetworkSchedulerService extends JobService implements
 
 
                         // Display the first 500 characters of the response string.
-                        System.out.println("Volley: " + message);
-                        System.out.println(response);
 
                         try {
                             JSONObject jsonObjectAll = new JSONObject(response);
@@ -493,12 +471,10 @@ public class NetworkSchedulerService extends JobService implements
                     // Indicates that the server response could not be parsed
 
                 }
-                System.out.println("Volley: " + message);
-                if (!message.equals("")) {
                     Toast.makeText(MyApplication.getAppContext(), Utils.getServerError(), Toast.LENGTH_LONG).show();
                     Intent intentError = new Intent(MyApplication.getAppContext(), MainActivity.class);
                     MyApplication.getAppContext().startActivity(intentError);
-                }
+
             }
         }
         );
@@ -578,7 +554,6 @@ public class NetworkSchedulerService extends JobService implements
             for(Bitmap bitmap:result) {
                 counter++;
                 Uri uri = saveImageToInternalStorage(bitmap,counter);
-                System.out.println(uri.toString());
                 settingsPreferences.edit().putString("imageUri"+counter,uri.toString()).apply();
             }
             settingsPreferences.edit().putInt("numberOfImages",counter).apply();

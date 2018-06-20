@@ -1,5 +1,6 @@
 package com.example.mastermind.testapp;
 
+import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -18,6 +19,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.Toast;
 
@@ -55,9 +57,10 @@ public class AreasFragment extends Fragment {
     SharedPreferences settingsPreferences = PreferenceManager.getDefaultSharedPreferences(MyApplication.getAppContext());
 
     CheckBox checkBox;
+    AlertDialog alertDialog;
+    AlertDialog.Builder dialogBuilder;
 
-    Button btnSave, btnCancel;
-    RadioButton radioButton, radioButton1, radioButton2;
+    Button btnSave;
     ArrayList<Boolean> checkIsChanged;
     ArrayList<JobOffer> offers;
     ArrayList<JobOffer> asyncOffers;
@@ -68,11 +71,18 @@ public class AreasFragment extends Fragment {
     ArrayList<OfferCategory> offerCategories;
     SimpleDateFormat format;
     PendingIntent pendingIntentA;
+    MyListView lv_areas;
 
     RequestQueue queue;
     String areasIds, categoriesIds;
     private RecyclerView categoriesRecyclerView;
     private RecyclerView areasRecyclerView;
+
+    AreasFragmentListener activityCommander;
+
+    public interface AreasFragmentListener{
+        public void changeOffers2();
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -84,10 +94,6 @@ public class AreasFragment extends Fragment {
         checkBox = rootView.findViewById(R.id.chbox_category);
 
         btnSave =rootView.findViewById(R.id.btn_save_areas);
-        btnCancel = rootView.findViewById(R.id.btn_cancel);
-        radioButton = rootView.findViewById(R.id.rb_day);
-        radioButton1 = rootView.findViewById(R.id.rb_once);
-        radioButton2 = rootView.findViewById(R.id.rb_twice);
         checkIsChanged = new ArrayList<>();
         asyncOffers = new ArrayList<>();
         offers = new ArrayList<>();
@@ -117,24 +123,11 @@ public class AreasFragment extends Fragment {
                 area.setAreaid(settingsPreferences.getInt("offerAreaId " + i, 0));
                 area.setTitle(settingsPreferences.getString("offerAreaTitle " + i, ""));
                 areas.add(area);
-                System.out.println(areas.get(i).getTitle() + "checkBoxAdapter");
             }
-            areasRecyclerView =rootView.findViewById(R.id.lv_areas);
 
-            //RecyclerView layout manager
-            LinearLayoutManager recyclerLayoutManager = new LinearLayoutManager(MyApplication.getAppContext());
-            areasRecyclerView.setLayoutManager(recyclerLayoutManager);
-
-            //RecyclerView item decorator
-            DividerItemDecoration dividerItemDecoration =
-                    new DividerItemDecoration(areasRecyclerView.getContext(),
-                            recyclerLayoutManager.getOrientation());
-            areasRecyclerView.addItemDecoration(dividerItemDecoration);
-
-            //RecyclerView adapater
-            CheckAreaRecycleAdapter recyclerViewAdapter = new
-                    CheckAreaRecycleAdapter(areas,MyApplication.getAppContext());
-            areasRecyclerView.setAdapter(recyclerViewAdapter);
+            lv_areas = rootView.findViewById(R.id.lv_areas);
+            CheckBoxAreaAdapter checkBoxAreaAdapter = new CheckBoxAreaAdapter(getContext(),areas);
+            lv_areas.setAdapter(checkBoxAreaAdapter);
 
         }
 
@@ -148,77 +141,67 @@ public class AreasFragment extends Fragment {
                 areasIds ="";
                 if (isConn()) {
 
-                    for (int i = 0; i < areasRecyclerView.getChildCount(); i++) {
-                        checkBox = areasRecyclerView.getChildAt(i).findViewById(R.id.chbox_category);
+                    for (int i = 0; i < lv_areas.getChildCount(); i++) {
+                        checkBox = lv_areas.getChildAt(i).findViewById(R.id.chbox_category);
                         if (checkBox.isChecked()) {
                             areasNames.add(checkBox.getText().toString());
                         }
                     }
+                    if(!areasNames.isEmpty()) {
 
-                    for (int j = 0; j < settingsPreferences.getInt("numberOfAreas", 0); j++) {
-                        for (String name : areasNames) {
-                            if (name.equals(settingsPreferences.getString("offerAreaTitle " + j, ""))) {
-                                offerArea = new OfferArea();
-                                offerArea.setAreaid(settingsPreferences.getInt("offerAreaId " + j, 0));
-                                offerArea.setTitle(settingsPreferences.getString("offerAreaTitle " + j, ""));
-                                offerAreas.add(offerArea);
+                        for (int j = 0; j < settingsPreferences.getInt("numberOfAreas", 0); j++) {
+                            offerArea = new OfferArea();
+                            offerArea.setAreaid(settingsPreferences.getInt("offerAreaId " + j, 0));
+                            offerArea.setTitle(settingsPreferences.getString("offerAreaTitle " + j, ""));
+                            for (String name : areasNames) {
+                                if (name.equals(settingsPreferences.getString("offerAreaTitle " + j, ""))) {
+                                    offerAreas.add(offerArea);
+                                }
                             }
                         }
-                    }
 
-                    for (int j = 0; j < settingsPreferences.getInt("numberOfAreas", 0); j++) {
-                        settingsPreferences.edit().remove("checkedAreaId "+ j).apply();
-                        settingsPreferences.edit().remove("checkedAreaTitle "+ j).apply();
-                    }
-                    for (int j = 0; j < settingsPreferences.getInt("numberOfAreas", 0); j++) {
-                        for(OfferArea oc : offerAreas) {
-                            if(oc.getAreaid() == settingsPreferences.getInt("offerAreaId "+j,0)) {
+                        for (int j = 0; j < settingsPreferences.getInt("numberOfAreas", 0); j++) {
+                            settingsPreferences.edit().remove("checkedAreaId " + j).apply();
+                            settingsPreferences.edit().remove("checkedAreaTitle " + j).apply();
+                        }
+                        for (int j = 0; j < settingsPreferences.getInt("numberOfAreas", 0); j++) {
+                            for (OfferArea oc : offerAreas) {
+                                if (oc.getAreaid() == settingsPreferences.getInt("offerAreaId " + j, 0)) {
 
-                                settingsPreferences.edit().putInt("checkedAreaId " + j, oc.getAreaid()).apply();
-                                settingsPreferences.edit().putString("checkedAreaTitle " + j, oc.getTitle()).apply();
+                                    settingsPreferences.edit().putInt("checkedAreaId " + j, oc.getAreaid()).apply();
+                                    settingsPreferences.edit().putString("checkedAreaTitle " + j, oc.getTitle()).apply();
+                                }
                             }
                         }
-                    }
 
 
-
-                    for (OfferArea oc : offerAreas) {
-                        if (areasIds.equals("")) {
-                            areasIds += oc.getAreaid();
-                        } else {
-                            areasIds += "," + oc.getAreaid();
-                        }
-
-                    }
-                    for(int i =0;i<settingsPreferences.getInt("numberOfCheckedCategories",0);i++){
-                        if (categoriesIds.equals("")){
-                            categoriesIds += settingsPreferences.getString("checkedCategoryTitle "+i,"");
-                        } else {
-                            categoriesIds += "," + settingsPreferences.getString("checkedCategoryTitle "+i,"");
+                        for (OfferArea oc : offerAreas) {
+                            if (areasIds.equals("")) {
+                                areasIds += oc.getAreaid();
+                            } else {
+                                areasIds += "," + oc.getAreaid();
+                            }
 
                         }
-                    }
+                        for (int i = 0; i < settingsPreferences.getInt("numberOfCheckedCategories", 0); i++) {
+                            if (categoriesIds.equals("")) {
+                                categoriesIds += settingsPreferences.getInt("checkedCategoryId " + i, 0);
+                            } else {
+                                categoriesIds += "," + settingsPreferences.getInt("checkedCategoryId " + i, 0);
 
-                    volleySaveOffers(categoriesIds, areasIds);
+                            }
+                        }
+
+                        volleySaveOffers(categoriesIds, areasIds);
+                    }else {
+                        Toast.makeText(getContext(),"Πρέπει να επιλέξετε τουλάχιστον μία περιοχή",Toast.LENGTH_LONG).show();
+                    }
                 }
             }
         });
 
 
         return rootView;
-    }
-
-    public void RefreshOperation() {
-
-        if (queue == null) {
-            queue = Volley.newRequestQueue(MyApplication.getAppContext());
-        }
-
-        if(isConn()) {
-            queue.add(volleyUpdateDefaultAreas());
-        }else {
-            Toast.makeText(MyApplication.getAppContext(),"Πρέπει να είστε συνδεδεμένος στο ίντερνετ για να κάνετε ανανέωση!",Toast.LENGTH_LONG).show();
-        }
     }
 
     public boolean isConn() {
@@ -233,100 +216,7 @@ public class AreasFragment extends Fragment {
     }
 
 
-    public StringRequest volleyUpdateDefaultAreas() {
-        String url = Utils.getUrl()+"jobOfferAreas.php?";
 
-        // Request a string response from the provided URL.
-        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        System.out.println(response);
-                        ArrayList<OfferArea> areasRefresh = new ArrayList<>();
-
-
-                        // Display the first 500 characters of the response string.
-                        try {
-                            JSONObject jsonObjectAll = new JSONObject(response);
-
-                            JSONArray jsonArray = jsonObjectAll.getJSONArray("jobofferareas");
-                            System.out.println(jsonArray.length());
-                            settingsPreferences.edit().putInt("numberOfAreas", jsonArray.length()).apply();
-                            System.out.println(settingsPreferences.getInt("numberOfAreas", 0));
-                            for (int i = 0; i < jsonArray.length(); i++) {
-                                JSONObject jsonObjectCategory = jsonArray.getJSONObject(i);
-                                settingsPreferences.edit().putInt("offerAreaId " + i, Integer.valueOf(jsonObjectCategory.getString("jloc_id"))).apply();
-                                settingsPreferences.edit().putString("offerAreaTitle " + i, jsonObjectCategory.getString("jloc_title")).apply();
-                                System.out.println(jsonObjectCategory.toString());
-
-                            }
-
-//                            if (settingsPreferences.getInt("numberOfAreas", 0) != 0) {
-//                                for (int i = 0; i < settingsPreferences.getInt("numberOfAreas", 0); i++) {
-//                                    OfferArea category = new OfferArea();
-//                                    category.setAreaid(settingsPreferences.getInt("offerAreaId " + i, 0));
-//                                    category.setTitle(settingsPreferences.getString("offerAreaTitle " + i, ""));
-//                                    areasRefresh.add(category);
-//                                    System.out.println(areasRefresh.get(i).getTitle() + "checkBoxAdapter");
-//                                }
-//
-//                                //RecyclerView layout manager
-//                                LinearLayoutManager recyclerLayoutManager = new LinearLayoutManager(MyApplication.getAppContext());
-//                                areasRecyclerView.setLayoutManager(recyclerLayoutManager);
-//
-//                                //RecyclerView item decorator
-//                                DividerItemDecoration dividerItemDecoration =
-//                                        new DividerItemDecoration(areasRecyclerView.getContext(),
-//                                                recyclerLayoutManager.getOrientation());
-//                                areasRecyclerView.addItemDecoration(dividerItemDecoration);
-//
-//                                //RecyclerView adapater
-//                                CheckAreaRecycleAdapter recyclerViewAdapter = new
-//                                        CheckAreaRecycleAdapter(areasRefresh,MyApplication.getAppContext());
-//                                areasRecyclerView.setAdapter(recyclerViewAdapter);
-
-//
-//                            }
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-
-                if (error instanceof TimeoutError || error instanceof NoConnectionError) {
-                    message = "TimeOutError";
-                    //This indicates that the reuest has either time out or there is no connection
-
-                } else if (error instanceof AuthFailureError) {
-                    message = "AuthFailureError";
-                    // Error indicating that there was an Authentication Failure while performing the request
-
-                } else if (error instanceof ServerError) {
-                    message = "ServerError";
-                    //Indicates that the server responded with a error response
-
-                } else if (error instanceof NetworkError) {
-                    message = "NetworkError";
-                    //Indicates that there was network error while performing the request
-
-                } else if (error instanceof ParseError) {
-                    message = "ParseError";
-                    // Indicates that the server response could not be parsed
-
-                }
-                System.out.println("Volley: " + message);
-                if (!message.equals("")) {
-                    Toast.makeText(MyApplication.getAppContext(), Utils.getServerError(), Toast.LENGTH_LONG).show();
-                    Intent intentError = new Intent(MyApplication.getAppContext(), SettingActivity.class);
-                    startActivity(intentError);
-                }
-            }
-        }
-        );
-        return stringRequest;
-    }
 
     public void volleySaveOffers(final String param, final String param2) {
 
@@ -338,9 +228,9 @@ public class AreasFragment extends Fragment {
                     @Override
                     public void onResponse(String response) {
 
+                        ArrayList<OfferCategory> offerCategories = new ArrayList<>();
+
                         // Display the first 500 characters of the response string.
-                        System.out.println("Volley: " + message);
-                        System.out.println(response);
 
                         try {
                             JSONObject jsonObjectAll = new JSONObject(response);
@@ -364,7 +254,6 @@ public class AreasFragment extends Fragment {
                                 offer.setDesc(jsonObjectCategory.getString("jad_desc"));
                                 offer.setDate(format.parse(jsonObjectCategory.getString("jad_date")));
                                 offer.setDownloaded(jsonObjectCategory.getString("jad_downloaded"));
-                                System.out.println(offer.getTitle() + " first time");
 
                                 asyncOffers.add(offer);
 
@@ -379,9 +268,6 @@ public class AreasFragment extends Fragment {
                                             return -1;
                                     }
                                 });
-                                for (int x = 0; x < asyncOffers.size(); x++) {
-                                    System.out.println(asyncOffers.get(x).getTitle());
-                                }
 
 
                                 i++;
@@ -394,36 +280,32 @@ public class AreasFragment extends Fragment {
                         }
 
 
-                        for (int j = 0; j < settingsPreferences.getInt("numberOfCategories", 0); j++) {
-                            System.out.println(settingsPreferences.getString("checkedCategoryTitle " + j, "") + "Removed from checked categories");
-                            settingsPreferences.edit().remove("checkedCatergoryId " + j).apply();
-                            settingsPreferences.edit().remove("checkedCatergoryTitle " + j).apply();
-                        }
-
-                        for (OfferCategory oc : offerCategories) {
-
-                            System.out.println(settingsPreferences.getString("checkedCategoryTitle " + offerCategories.indexOf(oc), "") + "Previously in checked categories");
-                            settingsPreferences.edit().putInt("checkedCategoryId " + offerCategories.indexOf(oc), oc.getCatid()).apply();
-                            settingsPreferences.edit().putString("checkedCategoryTitle " + offerCategories.indexOf(oc), oc.getTitle()).apply();
-                            System.out.println(settingsPreferences.getString("checkedCategoryTitle " + offerCategories.indexOf(oc), "") + "Added to checked categories");
-
-                        }
-
                         for (int j = 0; j < settingsPreferences.getInt("numberOfAreas", 0); j++) {
-                            System.out.println(settingsPreferences.getString("checkedAreaTitle " + j, "") + "Removed from checked categories");
                             settingsPreferences.edit().remove("checkedAreaId " + j).apply();
                             settingsPreferences.edit().remove("checkedAreaTitle " + j).apply();
                         }
 
                         for (OfferArea oa : offerAreas) {
 
-                            System.out.println(settingsPreferences.getString("checkedAreaTitle " + offerAreas.indexOf(oa), "") + "Previously in checked categories");
                             settingsPreferences.edit().putInt("checkedAreaId " + offerAreas.indexOf(oa), oa.getAreaid()).apply();
                             settingsPreferences.edit().putString("checkedAreaTitle " + offerAreas.indexOf(oa), oa.getTitle()).apply();
-                            System.out.println(settingsPreferences.getString("checkedAreaTitle " + offerAreas.indexOf(oa), "") + "Added to checked categories");
 
                         }
-                        settingsPreferences.edit().putInt("numberOfCheckedCategories", offerCategories.size()).apply();
+
+                        for (OfferArea oa : offerAreas) {
+                            OfferArea offerCategory1 = new OfferArea();
+                            offerCategory1.setAreaid(settingsPreferences.getInt("checkedAreaId " + offerAreas.indexOf(oa), oa.getAreaid()));
+                            offerCategory1.setTitle(settingsPreferences.getString("checkedAreaTitle " + offerAreas.indexOf(oa), oa.getTitle()));
+                        }
+
+                        for (int j = 0; j < settingsPreferences.getInt("numberOfCheckedCategories", 0); j++) {
+                            OfferCategory oc = new OfferCategory();
+                            oc.setCatid(settingsPreferences.getInt("checkedCategoryId "+j,0));
+                            oc.setTitle(settingsPreferences.getString("checkedCategoryTitle "+j,""));
+                            offerCategories.add(oc);
+                        }
+
+
                         settingsPreferences.edit().putInt("numberOfCheckedAreas", offerAreas.size()).apply();
 
 
@@ -440,9 +322,6 @@ public class AreasFragment extends Fragment {
                             settingsPreferences.edit().remove("offerDownloaded " + j).apply();
                         }
 
-                        for (int i = 0; i < asyncOffers.size(); i++) {
-                            System.out.println(asyncOffers.get(i).getTitle() + " in the Array that fills settings ");
-                        }
                         if (asyncOffers.size() > 0) {
                             for (int i = 0; i < asyncOffers.size(); i++) {
                                 if (i < 5) {
@@ -457,8 +336,6 @@ public class AreasFragment extends Fragment {
                                     settingsPreferences.edit().putString("offerDesc " + i, asyncOffers.get(i).getDesc()).apply();
                                     settingsPreferences.edit().putLong("offerDate " + i, asyncOffers.get(i).getDate().getTime()).apply();
                                     settingsPreferences.edit().putString("offerDownloaded " + i, asyncOffers.get(i).getDownloaded()).apply();
-                                    System.out.println(settingsPreferences.getLong("offerDate " + i, 0));
-                                    System.out.println(settingsPreferences.getString("offerTitle " + i, ""));
                                     settingsPreferences.edit().putInt("numberOfOffers", asyncOffers.size()).apply();
                                 } else
                                     settingsPreferences.edit().putInt("numberOfOffers", 5).apply();
@@ -466,14 +343,15 @@ public class AreasFragment extends Fragment {
 
                             settingsPreferences.edit().putLong("lastSeenDate", asyncOffers.get(0).getDate().getTime()).apply();
                             settingsPreferences.edit().putLong("lastNotDate", asyncOffers.get(0).getDate().getTime()).apply();
-
-                            System.out.println(settingsPreferences.getLong("lastSeenDate", 0));
                         } else {
                             settingsPreferences.edit().putInt("numberOfOffers", 0).apply();
                         }
 
+                        HideProgressDialog();
 
 
+//
+//                        activityCommander.changeOffers2();
 
 
                     }
@@ -503,13 +381,14 @@ public class AreasFragment extends Fragment {
                     // Indicates that the server response could not be parsed
 
                 }
-                System.out.println("Volley: " + message);
-                if (!message.equals("")) {
-                    Toast.makeText(MyApplication.getAppContext(), Utils.getServerError(), Toast.LENGTH_LONG).show();
-                }
+                HideProgressDialog();
+                Toast.makeText(MyApplication.getAppContext(), Utils.getServerError(), Toast.LENGTH_LONG).show();
+
             }
         }
-        ) {
+        )
+        {
+
             @Override
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
@@ -518,11 +397,28 @@ public class AreasFragment extends Fragment {
 
                 return params;
             }
-        };
+        }
+
+        ;
         Volley.newRequestQueue(MyApplication.getAppContext()).add(stringRequest);
+
+        ShowProgressDialog();
 
     }
 
 
+    public void ShowProgressDialog() {
+        dialogBuilder = new AlertDialog.Builder(getContext());
+        LayoutInflater inflater = (LayoutInflater) getActivity().getSystemService( Context.LAYOUT_INFLATER_SERVICE );
+        View dialogView = inflater.inflate(R.layout.progress_dialog_layout, null);
+        dialogBuilder.setView(dialogView);
+        dialogBuilder.setCancelable(false);
+        alertDialog = dialogBuilder.create();
+        alertDialog.show();
+    }
 
+    public void HideProgressDialog(){
+
+        alertDialog.dismiss();
+    }
 }

@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/TestAppConnected-Alert-master10.iml" filepath="$PROJECT_DIR$/TestAppConnected-Alert-master10.iml" />
+      <module fileurl="file://$PROJECT_DIR$/BeeMyJob.iml" filepath="$PROJECT_DIR$/BeeMyJob.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>

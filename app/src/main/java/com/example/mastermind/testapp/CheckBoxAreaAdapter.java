@@ -20,7 +20,7 @@ public class CheckBoxAreaAdapter extends BaseAdapter {
     Context context;
     ArrayList<OfferArea> categories = new ArrayList<>();
     SharedPreferences settingsPreferences;
-    CheckBox checkBox;
+    ViewHolder viewHolder = new ViewHolder();
 
 
     public CheckBoxAreaAdapter(Context context, ArrayList<OfferArea> categories) {
@@ -52,27 +52,35 @@ public class CheckBoxAreaAdapter extends BaseAdapter {
 
     @Override
     public View getView(int i, View view, ViewGroup viewGroup) {
-        System.out.println("getView " + i + " " + view);
         final OfferArea offerArea = categories.get(i);
         if (view == null) {
             LayoutInflater inflater = (LayoutInflater)
                     context.getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
             view = inflater.inflate(R.layout.checkbox_list_item, null);
 
-            checkBox = view.findViewById(R.id.chbox_category);
+            viewHolder.checkBox = view.findViewById(R.id.chbox_category);
 
-            checkBox.setText(offerArea.getTitle());
-            for (int j = 0; j < settingsPreferences.getInt("numberOfCheckedAreas",0); j++) {
-                System.out.println(checkBox.getText() + "In the checkboxadapter");
-                System.out.println(settingsPreferences.getString("checkedAreaTitle " + j, ""));
-                if (checkBox.getText().equals(settingsPreferences.getString("checkedAreaTitle " + j, ""))) {
-                    checkBox.setChecked(true);
-                }
+            view.setTag(viewHolder);
+        } else {
+            viewHolder = (ViewHolder) view.getTag();
+        }
+
+
+        viewHolder.checkBox = view.findViewById(R.id.chbox_category);
+
+        viewHolder.checkBox.setText(offerArea.getTitle());
+        for (int j = 0; j < settingsPreferences.getInt("numberOfCheckedAreas", 0); j++) {
+            if (viewHolder.checkBox.getText().equals(settingsPreferences.getString("checkedAreaTitle " + j, ""))) {
+                viewHolder.checkBox.setChecked(true);
             }
-
         }
 
 
         return view;
+
+    }
+
+    private class ViewHolder{
+        CheckBox checkBox;
     }
 }

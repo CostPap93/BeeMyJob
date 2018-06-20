@@ -8,8 +8,7 @@ public final class Utils {
 
     private final static String url = "http://data.des.edu.gr/beemyjob/";
 
-    private final static String serverError = "Υπάρχει κάποιο πρόβλημα στον Server!";
-    private final static String connectionError = "Δεν είστε συνδεδεμένος στο ίντερνετ!";
+    private final static String serverError = "Κάτι πήγε στραβά!";
 
     public static String getUrl(){
         return url;
@@ -19,9 +18,6 @@ public final class Utils {
         return serverError;
     }
 
-    public static String getConnectionError(){
-        return connectionError;
-    }
 
 
 }

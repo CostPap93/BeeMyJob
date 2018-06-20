@@ -54,11 +54,6 @@ public class UnseenActivity  extends AppCompatActivity {
 
 
         settingsPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        System.out.println(settingsPreferences.getInt("numberOfCategories", 0) == 0);
-        System.out.println(settingsPreferences.getInt("numberOfCheckedCategories", 0) == 0);
-
-
-        System.out.println(settingsPreferences.getBoolean("checkIsChanged", false));
 
             for (int i = 0; i < settingsPreferences.getInt("numberOfUnseenOffers", 0); i++) {
 
@@ -83,10 +78,9 @@ public class UnseenActivity  extends AppCompatActivity {
             }
 
 
-        System.out.println(offers.toString());
+
         JobOfferAdapter jobOfferAdapter = new JobOfferAdapter(getApplicationContext(), offers);
         lv.setAdapter(jobOfferAdapter);
-        System.out.println(settingsPreferences.getLong("interval",0));
 
 
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -133,7 +127,6 @@ public class UnseenActivity  extends AppCompatActivity {
 
             try {
                 File d = new File(path);
-                System.out.println("This is the path to upload: " + d.toString());
                 bitmaps.add(BitmapFactory.decodeStream(new FileInputStream(d)));
             } catch (FileNotFoundException e) {
                 e.printStackTrace();

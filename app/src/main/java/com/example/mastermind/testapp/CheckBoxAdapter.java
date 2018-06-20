@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.preference.PreferenceManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,7 +25,7 @@ public class CheckBoxAdapter extends BaseAdapter {
     Context context;
     ArrayList<OfferCategory> categories = new ArrayList<>();
     SharedPreferences settingsPreferences;
-    CheckBox checkBox;
+    ViewHolder viewHolder = new ViewHolder();
 
 
     public CheckBoxAdapter(Context context, ArrayList<OfferCategory> categories) {
@@ -33,10 +34,6 @@ public class CheckBoxAdapter extends BaseAdapter {
         this.settingsPreferences = PreferenceManager.getDefaultSharedPreferences(context);
     }
 
-    public void clear(){
-        categories.clear();
-        notifyDataSetChanged();
-    }
 
 
     @Override
@@ -56,30 +53,35 @@ public class CheckBoxAdapter extends BaseAdapter {
 
     @Override
     public View getView(int i, View view, ViewGroup viewGroup) {
-        System.out.println("getView " + i + " " + view);
         final OfferCategory offerCategory = categories.get(i);
+
         if (view == null) {
             LayoutInflater inflater = (LayoutInflater)
                     context.getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
             view = inflater.inflate(R.layout.checkbox_list_item, null);
 
-            checkBox = view.findViewById(R.id.chbox_category);
+            viewHolder.checkBox = view.findViewById(R.id.chbox_category);
 
-            checkBox.setText(offerCategory.getTitle());
-            for (int j = 0; j < settingsPreferences.getInt("numberOfCheckedCategories",0); j++) {
-                System.out.println(checkBox.getText() + "In the checkboxadapter");
-                System.out.println(settingsPreferences.getString("checkedCategoryTitle " + j, ""));
-                if (checkBox.getText().equals(settingsPreferences.getString("checkedCategoryTitle " + j, ""))) {
-                    checkBox.setChecked(true);
-                }
-             }
+            view.setTag(viewHolder);
+        }else{
+            viewHolder = (ViewHolder) view.getTag();
+        }
 
-
-
+        viewHolder.checkBox.setText(offerCategory.getTitle());
+        viewHolder.checkBox.setChecked(false);
+        for (int j = 0; j < settingsPreferences.getInt("numberOfCheckedCategories",0); j++) {
+            if (viewHolder.checkBox.getText().equals(settingsPreferences.getString("checkedCategoryTitle " + j, ""))) {
+                viewHolder.checkBox.setChecked(true);
+                break;
+            }
         }
 
 
         return view;
+    }
+
+    private class ViewHolder{
+        CheckBox checkBox;
     }
 }
 
